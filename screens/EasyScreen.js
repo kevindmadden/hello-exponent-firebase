@@ -56,47 +56,30 @@ class FactorDisplay extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      display:'',
-      borderOpacityAnim: new Animated.Value(0),
-      boxWithFocus:'',
-      firstSumLeftSummand:'',
-      firstSumMiddleSign:'',
-      firstSumRightSummand:'',
-      secondSumLeftSummand:'',
-      secondSumMiddleSign:'',
-      secondSumRightSummand:'',
+      factorInputGroup: {
+        activeBox:'firstSumLeftSummand',
+        firstSumLeftSummand:    { text:'', acceptsVariable:true, acceptsNumeral:true },
+        firstSumMiddleSign:     { text:'', acceptsSign:true },
+        firstSumRightSummand:   { text:'', acceptsNumeral:true },
+        secondSumLeftSummand:   { text:'', acceptsVariable:true, acceptsNumeral:true },
+        secondSumMiddleSign:    { text:'', acceptsSign:true },
+        secondSumRightSummand:  { text:'', acceptsNumeral:true },
+        nextOrder: ['firstSumLeftSummand', 'firstSumMiddleSign', 'firstSumRightSummand', 'secondSumLeftSummand', 'secondSumMiddleSign', 'secondSumRightSummand'],
+        acceptsSquaredVariables: true,
+        enabled: true,
+      },
+      activeGroup : 'factorInputGroup',
     }
     this.maxNumberSize = 3 //the number of digits of the biggest number that can be entered in any box
     this.noSquaredVariables = true
   }
 
-  componentDidMount(){
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(
-          this.state.borderOpacityAnim, {
-            toValue : 1,
-            easing : Easing.exp,
-            duration :700,
-          }
-        ),
-        Animated.timing(
-          this.state.borderOpacityAnim, {
-            toValue : 0,
-            easing : Easing.ease,
-            duration : 1000,
-          }
-        )]
-      )
-    ).start()
-  }
-
-  tryWritingNumeral(boxWithFocus, boxText, boxTextLastChar, keyValue){
-    if( boxWithFocus==='firstSumMiddleSign' || boxWithFocus==='secondSumMiddleSign' ){
+  tryWritingNumeral(activeBox, boxText, boxTextLastChar, keyValue){
+    if( activeBox==='firstSumMiddleSign' || activeBox==='secondSumMiddleSign' ){
       //if sign box already has a value but still has focus, then write numeral to next box if it is empty
-      if( boxText.length>0 && this.attemptToMoveFocus(boxWithFocus) ){
-        if(boxWithFocus==='firstSumMiddleSign') this.writeKeyToBox('firstSumRightSummand', keyValue)
-        if(boxWithFocus==='secondSumMiddleSign') this.writeKeyToBox('secondSumRightSummand', keyValue)
+      if( boxText.length>0 && this.attemptToMoveFocus(activeBox) ){
+        if(activeBox==='firstSumMiddleSign') this.writeKeyToBox('firstSumRightSummand', keyValue)
+        if(activeBox==='secondSumMiddleSign') this.writeKeyToBox('secondSumRightSummand', keyValue)
       }
     }else if(boxTextLastChar==='x' || boxTextLastChar==='²'){
       //numbers cannot come immediately after a variable or squared variable
@@ -105,92 +88,131 @@ class FactorDisplay extends React.Component {
     }else if(boxText.length===0 && keyValue==0){
       //0 cannot be first numeral entered
     }else{
-      this.writeKeyToBox(boxWithFocus, keyValue)
+      this.writeKeyToBox(activeBox, keyValue)
     }
 
   }
 
-  tryWritingVariable(boxWithFocus, boxText, boxTextLastChar, keyValue, noSquaredVariables){
-    if(boxWithFocus==='firstSumMiddleSign' || boxWithFocus==='secondSumMiddleSign'){
+  tryWritingVariable(activeBox, boxText, boxTextLastChar, keyValue, noSquaredVariables){
+    if(activeBox==='firstSumMiddleSign' || activeBox==='secondSumMiddleSign'){
       //variable cannot go in sign boxes
-    }else if(boxWithFocus==='firstSumRightSummand' || boxWithFocus==='secondSumRightSummand'){
+    }else if(activeBox==='firstSumRightSummand' || activeBox==='secondSumRightSummand'){
       //variable cannot go in right boxes
     }else if(boxTextLastChar==='x' || boxTextLastChar==='²'){
       //cannot have two variables in a row
     }else{
-        this.writeKeyToBox(boxWithFocus, keyValue)
-        if(noSquaredVariables) this.attemptToMoveFocus(boxWithFocus)
+        this.writeKeyToBox(activeBox, keyValue)
+        if(noSquaredVariables) this.attemptToMoveFocus(activeBox)
     }
   }
 
-  tryWritingSign(boxWithFocus, boxText, boxTextLastChar, keyValue){
-    if(boxWithFocus==='firstSumMiddleSign' || boxWithFocus==='secondSumMiddleSign'){
-      this.writeKeyToBox(boxWithFocus, keyValue, true)
-      if(boxText.length===0) this.attemptToMoveFocus(boxWithFocus)
-    }else if(boxWithFocus==='firstSumLeftSummand'){
-      if(boxText.length>0 && this.attemptToMoveFocus(boxWithFocus)) this.writeKeyToBox('firstSumMiddleSign', keyValue, true)
-    }else if(boxWithFocus==='secondSumLeftSummand'){
-      if(boxText.length>0 && this.attemptToMoveFocus(boxWithFocus)) this.writeKeyToBox('secondSumMiddleSign', keyValue, true)
+  tryWritingSign(activeBox, nextBox, keyValue){
+    let successful = false
+    let updates = {}
+    if(activeBox.attributes.acceptsSign){
+      updates[activeBox.name] = {...activeBox.attributes, text: ''+keyValue}
+      if(nextBox.isWrapped===false && nextBox.text=='') updates.activeBox=nextBox.name
+      successful = true
+    }else{
+      if(nextBox.attributes.acceptsSign && nextBox.text=='' && activeBox.text!='' && nextBox.isWrapped===false){
+        updates.activeBox=nextBox.name
+        updates[activeBox.name] = {...nextBox.attributes, text: ''+keyValue}
+        successful = true
+      }
     }
+    return {updates, successful}
   }
 
-  attemptToMoveFocus(boxWithFocus){
-    if(boxWithFocus==='firstSumMiddleSign' && (this.state.firstSumRightSummand).length===0){
-      this.setBoxWithFocus('firstSumRightSummand')
+  attemptToMoveFocus(activeBox){
+    if(activeBox==='firstSumMiddleSign' && (this.state.firstSumRightSummand).length===0){
+      this.setactiveBox('firstSumRightSummand')
       return true
-    }else if(boxWithFocus==='secondSumMiddleSign' && (this.state.secondSumRightSummand).length===0){
-      this.setBoxWithFocus('secondSumRightSummand')
+    }else if(activeBox==='secondSumMiddleSign' && (this.state.secondSumRightSummand).length===0){
+      this.setactiveBox('secondSumRightSummand')
       return true
-    }else if(boxWithFocus==='firstSumLeftSummand' && (this.state.firstSumMiddleSign).length===0){
-      this.setBoxWithFocus('firstSumMiddleSign')
+    }else if(activeBox==='firstSumLeftSummand' && (this.state.firstSumMiddleSign).length===0){
+      this.setactiveBox('firstSumMiddleSign')
       return true
-    }else if(boxWithFocus==='secondSumLeftSummand' && (this.state.secondSumMiddleSign).length===0){
-      this.setBoxWithFocus('secondSumMiddleSign')
+    }else if(activeBox==='secondSumLeftSummand' && (this.state.secondSumMiddleSign).length===0){
+      this.setactiveBox('secondSumMiddleSign')
       return true
     }
     return false
   }
 
-  tryWritingSquare(boxWithFocus, boxText, boxTextLastChar, keyValue, noSquaredVariables){
+  tryWritingSquare(activeBox, boxText, boxTextLastChar, keyValue, noSquaredVariables){
     if( boxTextLastChar==='x' && !noSquaredVariables ){
-      this.writeKeyToBox(boxWithFocus, keyValue)
-      this.attemptToMoveFocus(boxWithFocus)
+      this.writeKeyToBox(activeBox, keyValue)
+      this.attemptToMoveFocus(activeBox)
     }
   }
 
+  writeKeyToBox(activeBox, keyValue, boxText, overwrite=false){
+    //overwrite ? this.setState({factorInputGroup: { [activeBox]: { [display] : keyValue } } }) : this.setState({factorInputGroup: { [activeBox]: { [display] : boxText+''+keyValue } } })
+  }
 
-  writeKeyToBox(box, keyValue, overwrite=false){
-    let boxText = this.state[box]
-    overwrite ? this.setState({[box] : keyValue}) : this.setState({[box] : boxText+''+keyValue})
+  respondToKeyPress(prevState, keyValue){
+    let focusGroupName = 'factorInputGroup'
+    let focusGroup = prevState[focusGroupName]
+
+    let activeBox = (() => {
+      let name = focusGroup['activeBox']
+      let attributes = focusGroup[name]
+      let text = attributes.text
+      let textLastChar = text.slice(-1)
+      return {name, attributes, text, textLastChar}
+    })()
+
+    let nextBox = (() => {
+      let activeBoxIndex = focusGroup.nextOrder.indexOf(activeBox.name)
+      if(activeBoxIndex===-1) console.error(''+activeBox.name+' is not included in the nextOrder array')
+      let isWrapped = activeBoxIndex==(focusGroup.nextOrder.length-1) ? true : false
+      let name = isWrapped===false ? focusGroup.nextOrder[activeBoxIndex+1] : focusGroup.nextOrder[0]
+      let attributes = focusGroup[name]
+      let text = attributes.text
+      let textLastChar = text.slice(-1)
+      return {isWrapped, name, attributes, text, textLastChar}
+    })()
+
+    let newFocusGroupObj = {
+      updates: {},
+      successful: false,
+    }
+
+    if(keyValue === 'Submit'){
+
+    }else if(keyValue === 'No Solution'){
+
+    }else if(keyValue === 'Next'){
+      newFocusGroupObj = {updates: {activeBox: nextBox.name}, successful: true }
+    }else if(keyValue === '+' || keyValue === '-'){
+      if(keyValue==='-') keyValue='−'
+      newFocusGroupObj = this.tryWritingSign(activeBox, nextBox, keyValue)
+    }else if(keyValue === 'x'){
+      //this.tryWritingVariable(activeBox, boxText, boxTextLastChar, keyValue, this.noSquaredVariables)
+    }else if(keyValue === '²'){
+      //this.tryWritingSquare(activeBox, boxText, boxTextLastChar, keyValue, this.noSquaredVariables)
+    }else if([1,2,3,4,5,6,7,8,9,0].indexOf(keyValue)>-1){
+      //this.tryWritingNumeral(activeBox, boxText, boxTextLastChar, keyValue)
+    }else if(keyValue === 'Delete'){
+      //this.setState({[activeBox] : boxText.slice(0,-1) })
+    }
+
+    return {
+      [focusGroupName] : {
+        ...focusGroup,
+        ...newFocusGroupObj.updates,
+      }
+    }
+
   }
 
   componentWillReceiveProps(nextProps){
     let lastKeyPressedPropActuallyChanged = !(this.props.lastKeyPressed.time===nextProps.lastKeyPressed.time && this.props.lastKeyPressed.keyValue===nextProps.lastKeyPressed.keyValue) //if the time and keyvalue is the same in both props, key prop did not actually change
     if(lastKeyPressedPropActuallyChanged){
       let keyValue = nextProps.lastKeyPressed.keyValue
-
-      let boxWithFocus = this.state.boxWithFocus
-      let boxText = this.state[boxWithFocus]
-      let boxTextLastChar = boxText.slice(-1)
-
-      if(keyValue === 'Submit'){
-
-      }else if(keyValue === 'No Solution'){
-
-      }else if(keyValue === 'Next'){
-
-      }else if(keyValue === '+' || keyValue === '-'){
-        if(keyValue==='-') keyValue='−'
-        this.tryWritingSign(boxWithFocus, boxText, boxTextLastChar, keyValue)
-      }else if(keyValue === 'x'){
-        this.tryWritingVariable(boxWithFocus, boxText, boxTextLastChar, keyValue, this.noSquaredVariables)
-      }else if(keyValue === '²'){
-        this.tryWritingSquare(boxWithFocus, boxText, boxTextLastChar, keyValue, this.noSquaredVariables)
-      }else if([1,2,3,4,5,6,7,8,9,0].indexOf(keyValue)>-1){
-        this.tryWritingNumeral(boxWithFocus, boxText, boxTextLastChar, keyValue)
-      }else if(keyValue === 'Delete'){
-        this.setState({[boxWithFocus] : boxText.slice(0,-1) })
-      }
+      this.setState( (prevState) => {return this.respondToKeyPress(prevState, keyValue)} )
+      console.log(this.state)
     }
   }
 
@@ -202,13 +224,14 @@ class FactorDisplay extends React.Component {
 // set focus on that box (which will start animation)
 // determine in higher component which box was pressed
 
+
+
   render(){
-    var color = this.state.borderOpacityAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['rgba(15, 255, 247, 0)', 'rgba(15, 255, 247, 0.8)']
-    })
     let marginWidth = -2
     let marginParenthesisWidth = -6
+    let nameOfActiveButton = this.state[this.state.activeGroup]['activeBox']
+    let getName = (nameIndex) => this.state.factorInputGroup.nextOrder[nameIndex]
+    let getText = (nameIndex) => this.state.factorInputGroup[getName(nameIndex)]['text']
     return (
       <View style={styles.container}>
 
@@ -216,30 +239,30 @@ class FactorDisplay extends React.Component {
           <Text style={styles.parenthesis}>(</Text>
           <View style = {{marginLeft:marginParenthesisWidth, marginRight:marginWidth}}>
             <RectangularGlowingBorderButton
-              name = 'firstSumLeftSummand'
-              nameOfActiveButton = {this.state.boxWithFocus}
-              text = {this.state.firstSumLeftSummand}
-              onPress = {this.setBoxWithFocus.bind(this)}
+              name = {getName(0)}
+              nameOfActiveButton = {nameOfActiveButton}
+              text = {getText(0)}
+              onPress = {this.setactiveBox.bind(this)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
           </View>
           <View style = {{marginLeft:marginWidth, marginRight:marginWidth}}>
             <CircularGlowingBorderButton
-              name = 'firstSumMiddleSign'
-              nameOfActiveButton = {this.state.boxWithFocus}
-              text = {this.state.firstSumMiddleSign}
-              onPress = {this.setBoxWithFocus.bind(this)}
+              name = {getName(1)}
+              nameOfActiveButton = {nameOfActiveButton}
+              text = {getText(1)}
+              onPress = {this.setactiveBox.bind(this)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
           </View>
           <View style = {{marginLeft:marginWidth, marginRight:marginParenthesisWidth}}>
             <RectangularGlowingBorderButton
-              name = 'firstSumRightSummand'
-              nameOfActiveButton = {this.state.boxWithFocus}
-              text = {this.state.firstSumRightSummand}
-              onPress = {this.setBoxWithFocus.bind(this)}
+              name = {getName(2)}
+              nameOfActiveButton = {nameOfActiveButton}
+              text = {getText(2)}
+              onPress = {this.setactiveBox.bind(this)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -249,30 +272,30 @@ class FactorDisplay extends React.Component {
 
           <View style = {{marginLeft:marginParenthesisWidth, marginRight:marginWidth}}>
             <RectangularGlowingBorderButton
-              name = 'secondSumLeftSummand'
-              nameOfActiveButton = {this.state.boxWithFocus}
-              text = {this.state.secondSumLeftSummand}
-              onPress = {this.setBoxWithFocus.bind(this)}
+              name = {getName(3)}
+              nameOfActiveButton = {nameOfActiveButton}
+              text = {getText(3)}
+              onPress = {this.setactiveBox.bind(this)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
           </View>
           <View style = {{marginLeft:marginWidth, marginRight:marginWidth}}>
             <CircularGlowingBorderButton
-              name = 'secondSumMiddleSign'
-              nameOfActiveButton = {this.state.boxWithFocus}
-              text = {this.state.secondSumMiddleSign}
-              onPress = {this.setBoxWithFocus.bind(this)}
+              name = {getName(4)}
+              nameOfActiveButton = {nameOfActiveButton}
+              text = {getText(4)}
+              onPress = {this.setactiveBox.bind(this)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
           </View>
           <View style = {{marginLeft:marginWidth, marginRight:marginParenthesisWidth}}>
             <RectangularGlowingBorderButton
-              name = 'secondSumRightSummand'
-              nameOfActiveButton = {this.state.boxWithFocus}
-              text = {this.state.secondSumRightSummand}
-              onPress = {this.setBoxWithFocus.bind(this)}
+              name = {getName(5)}
+              nameOfActiveButton = {nameOfActiveButton}
+              text = {getText(5)}
+              onPress = {this.setactiveBox.bind(this)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -287,8 +310,8 @@ class FactorDisplay extends React.Component {
     )
   }
 
-  setBoxWithFocus(box){
-    this.setState({boxWithFocus: box})
+  setactiveBox(box){
+    this.setState((prevState) => {return{factorInputGroup:{...prevState.factorInputGroup, activeBox: box}}})
   }
 
 }
