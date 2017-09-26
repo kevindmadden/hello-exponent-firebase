@@ -55,6 +55,7 @@ class FactorDisplay extends React.Component {
 
   constructor(props) {
     super(props)
+    //options: acceptsVariable, acceptsSquaredVariable, acceptsNumeral, acceptsSign, leadingSignBox (this is for when there is a sign box at the very front)
     this.state = {
       factorInputGroup: {
         activeBox:'firstSumLeftSummand',
@@ -65,8 +66,8 @@ class FactorDisplay extends React.Component {
         secondSumMiddleSign:    { text:'', acceptsSign:true },
         secondSumRightSummand:  { text:'', acceptsNumeral:true },
         nextOrder: ['firstSumLeftSummand', 'firstSumMiddleSign', 'firstSumRightSummand', 'secondSumLeftSummand', 'secondSumMiddleSign', 'secondSumRightSummand'],
-        acceptsSquaredVariables: true,
         enabled: true,
+        maxNumberSize : 3,
       },
       activeGroup : 'factorInputGroup',
     }
@@ -74,36 +75,53 @@ class FactorDisplay extends React.Component {
     this.noSquaredVariables = true
   }
 
-  tryWritingNumeral(activeBox, boxText, boxTextLastChar, keyValue){
-    if( activeBox==='firstSumMiddleSign' || activeBox==='secondSumMiddleSign' ){
-      //if sign box already has a value but still has focus, then write numeral to next box if it is empty
-      if( boxText.length>0 && this.attemptToMoveFocus(activeBox) ){
-        if(activeBox==='firstSumMiddleSign') this.writeKeyToBox('firstSumRightSummand', keyValue)
-        if(activeBox==='secondSumMiddleSign') this.writeKeyToBox('secondSumRightSummand', keyValue)
-      }
-    }else if(boxTextLastChar==='x' || boxTextLastChar==='²'){
-      //numbers cannot come immediately after a variable or squared variable
-    }else if(boxText.length>=this.maxNumberSize){
-      //I cannot imagine a scenario in which more than a 3 digit number would be needed
-    }else if(boxText.length===0 && keyValue==0){
-      //0 cannot be first numeral entered
-    }else{
-      this.writeKeyToBox(activeBox, keyValue)
-    }
-
+  setActiveBox(updates, box){
+    updates.activeBox = box.name
   }
 
-  tryWritingVariable(activeBox, boxText, boxTextLastChar, keyValue, noSquaredVariables){
-    if(activeBox==='firstSumMiddleSign' || activeBox==='secondSumMiddleSign'){
-      //variable cannot go in sign boxes
-    }else if(activeBox==='firstSumRightSummand' || activeBox==='secondSumRightSummand'){
-      //variable cannot go in right boxes
-    }else if(boxTextLastChar==='x' || boxTextLastChar==='²'){
-      //cannot have two variables in a row
-    }else{
-        this.writeKeyToBox(activeBox, keyValue)
-        if(noSquaredVariables) this.attemptToMoveFocus(activeBox)
+  tryWritingNumeral(activeBox, nextBox, maxNumberSize, keyValue){
+    let successful = false
+    let updates = {}
+    if(activeBox.attributes.acceptsNumeral){
+      if(activeBox.textLastChar==='x' || activeBox.textLastChar==='²'){
+        //numbers cannot come immediately after a variable or squared variable
+      }else if(activeBox.text.length>=maxNumberSize){
+        //do not allow number to be entered greater than max size
+      }else if(keyValue==0 && activeBox.text.length==0){
+        //0 cannot be first numeral entered
+      }else{
+        updates[activeBox.name] = {...activeBox.attributes, text:activeBox.text+''+keyValue}
+        successful = true
+      }
     }
+    //if number is entered when focus is on leading sign box, move focus to next number box and enter value
+    //this is handy if the leading value is positive and the sign box needs to be blank
+    if(activeBox.attributes.acceptsSign && nextBox.attributes.acceptsNumeral){
+      if(nextBox.text.length==0 && keyValue!=0){ //if there is nothing in the numeral box and key value is not 0
+        if(activeBox.text.length>0 || (activeBox.attributes.leadingSignBox)){
+        //^if sign has already been filled in or if it can be empty due to the box being a leading sign box
+          updates.activeBox=nextBox.name
+          updates[nextBox.name] = {...nextBox.attributes, text:''+keyValue}
+          successful = true
+        }
+      }
+    }
+    return {updates, successful}
+  }
+
+  tryWritingVariable(activeBox, nextBox, keyValue){
+    let successful = false
+    let updates = {}
+    if(activeBox.attributes.acceptsVariable){
+      if(activeBox.textLastChar==='x' || activeBox.textLastChar==='²'){
+        //cannot have two variables in a row
+      }else{
+        updates[activeBox.name] = {...activeBox.attributes, text:activeBox.text''+keyValue}
+        if(!activeBox.attributes.acceptsSquaredVariable) updates.activeBox=nextBox.name //move focus if variable cannot be squared
+        successful = true
+      }
+    }
+    return {updates, successful}
   }
 
   tryWritingSign(activeBox, nextBox, keyValue){
@@ -116,7 +134,7 @@ class FactorDisplay extends React.Component {
     }else{
       if(nextBox.attributes.acceptsSign && nextBox.text=='' && activeBox.text!='' && nextBox.isWrapped===false){
         updates.activeBox=nextBox.name
-        updates[activeBox.name] = {...nextBox.attributes, text: ''+keyValue}
+        updates[nextBox.name] = {...nextBox.attributes, text: ''+keyValue}
         successful = true
       }
     }
@@ -147,34 +165,30 @@ class FactorDisplay extends React.Component {
     }
   }
 
-  writeKeyToBox(activeBox, keyValue, boxText, overwrite=false){
-    //overwrite ? this.setState({factorInputGroup: { [activeBox]: { [display] : keyValue } } }) : this.setState({factorInputGroup: { [activeBox]: { [display] : boxText+''+keyValue } } })
-  }
-
   respondToKeyPress(prevState, keyValue){
-    let focusGroupName = 'factorInputGroup'
-    let focusGroup = prevState[focusGroupName]
+    let activeGroupName = prevState.activeGroup
+    let activeGroup = prevState[activeGroupName]
 
     let activeBox = (() => {
-      let name = focusGroup['activeBox']
-      let attributes = focusGroup[name]
+      let name = activeGroup['activeBox']
+      let attributes = activeGroup[name]
       let text = attributes.text
       let textLastChar = text.slice(-1)
-      return {name, attributes, text, textLastChar}
+      let index = activeGroup.nextOrder.indexOf(name)
+      return {name, attributes, text, textLastChar, index}
     })()
 
     let nextBox = (() => {
-      let activeBoxIndex = focusGroup.nextOrder.indexOf(activeBox.name)
-      if(activeBoxIndex===-1) console.error(''+activeBox.name+' is not included in the nextOrder array')
-      let isWrapped = activeBoxIndex==(focusGroup.nextOrder.length-1) ? true : false
-      let name = isWrapped===false ? focusGroup.nextOrder[activeBoxIndex+1] : focusGroup.nextOrder[0]
-      let attributes = focusGroup[name]
+      if(activeBox.index===-1) console.error(''+activeBox.name+' is not included in the nextOrder array')
+      let isWrapped = activeBox.index==(activeGroup.nextOrder.length-1) ? true : false
+      let name = isWrapped===false ? activeGroup.nextOrder[activeBox.index+1] : activeGroup.nextOrder[0]
+      let attributes = activeGroup[name]
       let text = attributes.text
       let textLastChar = text.slice(-1)
       return {isWrapped, name, attributes, text, textLastChar}
     })()
 
-    let newFocusGroupObj = {
+    let newActiveGroupObj = {
       updates: {},
       successful: false,
     }
@@ -184,24 +198,24 @@ class FactorDisplay extends React.Component {
     }else if(keyValue === 'No Solution'){
 
     }else if(keyValue === 'Next'){
-      newFocusGroupObj = {updates: {activeBox: nextBox.name}, successful: true }
+      newActiveGroupObj = {updates: {activeBox: nextBox.name}, successful: true }
     }else if(keyValue === '+' || keyValue === '-'){
       if(keyValue==='-') keyValue='−'
-      newFocusGroupObj = this.tryWritingSign(activeBox, nextBox, keyValue)
+      newActiveGroupObj = this.tryWritingSign(activeBox, nextBox, keyValue)
     }else if(keyValue === 'x'){
-      //this.tryWritingVariable(activeBox, boxText, boxTextLastChar, keyValue, this.noSquaredVariables)
+      newActiveGroupObj = this.tryWritingVariable(activeBox, nextBox, keyValue)
     }else if(keyValue === '²'){
       //this.tryWritingSquare(activeBox, boxText, boxTextLastChar, keyValue, this.noSquaredVariables)
     }else if([1,2,3,4,5,6,7,8,9,0].indexOf(keyValue)>-1){
-      //this.tryWritingNumeral(activeBox, boxText, boxTextLastChar, keyValue)
+      newActiveGroupObj = this.tryWritingNumeral(activeBox, nextBox, activeGroup.maxNumberSize, keyValue)
     }else if(keyValue === 'Delete'){
-      //this.setState({[activeBox] : boxText.slice(0,-1) })
+      newActiveGroupObj = {updates: {[activeBox.name] : {...activeBox.attributes, text: activeBox.text.slice(0,-1)}}} //this.setState({[activeBox] : boxText.slice(0,-1) })
     }
 
     return {
-      [focusGroupName] : {
-        ...focusGroup,
-        ...newFocusGroupObj.updates,
+      [activeGroupName] : {
+        ...activeGroup,
+        ...newActiveGroupObj.updates,
       }
     }
 
@@ -232,6 +246,7 @@ class FactorDisplay extends React.Component {
     let nameOfActiveButton = this.state[this.state.activeGroup]['activeBox']
     let getName = (nameIndex) => this.state.factorInputGroup.nextOrder[nameIndex]
     let getText = (nameIndex) => this.state.factorInputGroup[getName(nameIndex)]['text']
+    let factorInputGroup = 'factorInputGroup'
     return (
       <View style={styles.container}>
 
@@ -242,7 +257,7 @@ class FactorDisplay extends React.Component {
               name = {getName(0)}
               nameOfActiveButton = {nameOfActiveButton}
               text = {getText(0)}
-              onPress = {this.setactiveBox.bind(this)}
+              onPress = {this.setactiveBox.bind(this, factorInputGroup)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -252,7 +267,7 @@ class FactorDisplay extends React.Component {
               name = {getName(1)}
               nameOfActiveButton = {nameOfActiveButton}
               text = {getText(1)}
-              onPress = {this.setactiveBox.bind(this)}
+              onPress = {this.setactiveBox.bind(this, factorInputGroup)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -262,7 +277,7 @@ class FactorDisplay extends React.Component {
               name = {getName(2)}
               nameOfActiveButton = {nameOfActiveButton}
               text = {getText(2)}
-              onPress = {this.setactiveBox.bind(this)}
+              onPress = {this.setactiveBox.bind(this, factorInputGroup)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -275,7 +290,7 @@ class FactorDisplay extends React.Component {
               name = {getName(3)}
               nameOfActiveButton = {nameOfActiveButton}
               text = {getText(3)}
-              onPress = {this.setactiveBox.bind(this)}
+              onPress = {this.setactiveBox.bind(this, factorInputGroup)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -285,7 +300,7 @@ class FactorDisplay extends React.Component {
               name = {getName(4)}
               nameOfActiveButton = {nameOfActiveButton}
               text = {getText(4)}
-              onPress = {this.setactiveBox.bind(this)}
+              onPress = {this.setactiveBox.bind(this, factorInputGroup)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -295,7 +310,7 @@ class FactorDisplay extends React.Component {
               name = {getName(5)}
               nameOfActiveButton = {nameOfActiveButton}
               text = {getText(5)}
-              onPress = {this.setactiveBox.bind(this)}
+              onPress = {this.setactiveBox.bind(this, factorInputGroup)}
               rgbaFadeColor = 'rgba(255, 128, 0, 0.0)'
               rgbaGlowColor = 'rgba(255, 128, 0, 0.8)'
             />
@@ -310,8 +325,8 @@ class FactorDisplay extends React.Component {
     )
   }
 
-  setactiveBox(box){
-    this.setState((prevState) => {return{factorInputGroup:{...prevState.factorInputGroup, activeBox: box}}})
+  setactiveBox(group, box){
+    this.setState((prevState) => {return{factorInputGroup:{...prevState[group], activeBox: box}}})
   }
 
 }
