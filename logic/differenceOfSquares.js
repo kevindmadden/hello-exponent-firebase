@@ -10,7 +10,7 @@ function pickFromPerfectSquares() {
 }
 
 //should return (if applicable): equation type, equation string, factorable, factored solution (return each pair of () as separate object )
-export function getFactoredEquation(equationType='differenceOfSquares', factorable=true, difficulty=1){
+export function getFactorProblem(equationType='differenceOfSquares', factorable=true, difficulty=1){
   let tempEqnObj
   switch(equationType){
     case 'differenceOfSquares':
@@ -20,7 +20,7 @@ export function getFactoredEquation(equationType='differenceOfSquares', factorab
   return {
     equationType:equationType,
     equation:tempEqnObj.equation,
-    factoredEquation:tempEqnObj.factoredEquation,
+    factoredExpression:tempEqnObj.factoredExpression,
     factorable:factorable,
   }
 }
@@ -30,15 +30,15 @@ function pickDifferenceOfSquares(factorable, difficulty){
   let a = 1
   let b = 0
   let c
-  let factoredEquation
+  let factoredExpression
   if(factorable){
     c = perfectSquares[getRandomInt(0,perfectSquares.length-1)]
     let sqrtC = Math.sqrt(c)
-    factoredEquation = {
+    factoredExpression = {
       group1 : [1,sqrtC],
       group2 : [1,((-1)*sqrtC)],
-      factoredEquationString1 : '(x+'+sqrtC+')(x-'+sqrtC+')',
-      factoredEquationString2 : '(x-'+sqrtC+')(x+'+sqrtC+')',
+      text1 : '(x+'+sqrtC+')',
+      text2 : '(x-'+sqrtC+')',
     }
   }else{
     c = notPerfectSquares[getRandomInt(0,notPerfectSquares.length-1)]
@@ -49,10 +49,10 @@ function pickDifferenceOfSquares(factorable, difficulty){
     a : a,
     b : b,
     c : c,
-    equationString : 'x²' + cString,
+    text : 'x²' + cString,
   }
   return {
     equation: equation,
-    factoredEquation: factoredEquation
+    factoredExpression: factoredExpression
   }
 }

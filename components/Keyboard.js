@@ -25,13 +25,32 @@ export class NumberKeyboard extends React.Component {
     return this.props.onPress.bind(this, keyValue)
   }
 
+  getTopKeys(){
+    if(this.props.mode=='Submit'){
+        return(
+          <View style={{flex:1, flexDirection:'row', borderWidth:0, borderColor:'black', backgroundColor:this.props.backgroundColor}}>
+            <FlexKey text='No Solution Ø' backgroundColor='red' onPress={this.returnKeyValue('No Solution')} />
+            <FlexKey text='✓ Submit' backgroundColor='lawngreen' onPress={this.returnKeyValue('Submit')} />
+          </View>
+        )
+    }else{
+      return(
+        <View style={{flex:1, flexDirection:'row', borderWidth:0, borderColor:'black', backgroundColor:this.props.backgroundColor}}>
+          <FlexKey text='Next Problem ⇨' backgroundColor='yellow' onPress={this.returnKeyValue('Next Problem')} />
+        </View>
+      )
+    }
+
+  }
+
   render () {
     return(
       <View style={{flex:1, flexDirection:'column',}}>
-        <View style={{flex:1, flexDirection:'row', borderWidth:0, borderColor:'black', backgroundColor:this.props.backgroundColor}}>
-          <FlexKey text='Ø' backgroundColor='red' onPress={this.returnKeyValue('No Solution')} />
-          <FlexKey text='✓ Submit' backgroundColor='lawngreen' onPress={this.returnKeyValue('Submit')} />
-        </View>
+
+
+          {this.getTopKeys()}
+          {/*<FlexKey text='✓ Submit' backgroundColor='lawngreen' onPress={this.returnKeyValue('Submit')} />*/}
+
         <View style={{flex:1, flexDirection:'row', borderWidth:0, borderColor:'black', backgroundColor:this.props.backgroundColor}}>
           <FlexKey text='1' backgroundColor='white' onPress={this.returnKeyValue(1)} />
           <FlexKey text='2' backgroundColor='white' onPress={this.returnKeyValue(2)} />
