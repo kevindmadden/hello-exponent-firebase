@@ -3,19 +3,18 @@ import React from 'react';
 import { Platform, StatusBar } from 'react-native';
 import { StackNavigator } from 'react-navigation';
 
-import MainTabNavigator from './MainTabNavigator';
 import registerForPushNotificationsAsync from '../api/registerForPushNotificationsAsync';
 
-import HomeScreen from '../screens/HomeScreen';
-import EasyScreen from '../screens/EasyScreen';
+import { HomeScreen } from '../screens/HomeScreen';
+import FactorQuizScreen from '../screens/FactorQuizScreen'
 //height: Platform.OS === "ios" ? 64 : (56 + StatusBar.currentHeight),
 const RootStackNavigator = StackNavigator(
   {
     Home: {
       screen: HomeScreen
     },
-    Easy: {
-      screen: EasyScreen
+    FactorQuizScreen: {
+      screen: FactorQuizScreen,
     },
   },
   {

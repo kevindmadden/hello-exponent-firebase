@@ -61,7 +61,9 @@ function respondToKeyPressFactorGroup(prevState, keyValue, nextProps, groupType)
       nextProps.onSubmit(activeGroup)
     }
   }else if(keyValue === 'No Solution'){
-
+    if(groupType=='factorGroup'){
+      nextProps.onSubmit('No Solution')
+    }
   }else if(keyValue === 'Next Problem'){
       nextProps.onNextProblem()
   }else if(keyValue === 'Next'){

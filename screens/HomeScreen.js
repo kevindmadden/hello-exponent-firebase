@@ -1,4 +1,5 @@
 import React from 'react';
+import Expo from 'expo'
 import {
   Image,
   Linking,
@@ -13,81 +14,37 @@ import {
   Webview,
   TextInput,
   StatusBar,
+  Modal,
 } from 'react-native';
 
-import { BigButton, SquareButton, FlexKey } from '../components/Button';
+import { connect } from 'react-redux'
+import { BigButton, SquareButton, FlexKey, MathButton } from '../components/Button';
 import { MonoText } from '../components/StyledText';
 import { getFactoredEquation } from '../logic/differenceOfSquares';
+import DifficultyOverlay from '../screens/DifficultyOverlay'
+import { HomeScreenPresentation } from '../screens/HomeScreenPresentation'
+import { incrementCounter, decrementCounter, incrementUserValue } from '../actions/mainActions'
 
-export default class HomeScreen extends React.Component {
+import * as firebase from 'firebase';
 
-  constructor(props) {
-    super(props)
-    this.state = { equation: {equationString:'Placeholder'}, keyValue:'' }
-
+const mapStateToProps = state => {
+  return {
+    counter: state.counter
   }
-  static navigationOptions = {
-    headerTitle: 'Main Menu',
-  }
-
-  componentDidMount() {
-    BackHandler.addEventListener('hardwareBackPress', () => true)
-  }
-
-  componentWillUnmount() {
-    BackHandler.removeEventListener('hardwareBackPress', () => true)
-  }
-
-  render() {
-    return (
-
-      <View style={{flex:1, flexDirection:'column'}}>
-      <ScrollView>
-      <View style={styles.container}>
-
-
-
-        <View style={styles.buttonGroupContainer}>
-          <BigButton text='Easy' backgroundColor='palegreen' onPress={() => this.props.navigation.navigate('Easy')} />
-          <SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}} onPress={() => this.props.navigation.navigate('Easy')} />
-        </View>
-
-        <View style={styles.buttonGroupContainer}>
-          <BigButton text='Medium' backgroundColor='lightsalmon' />
-          <SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}}/>
-        </View>
-
-        <View style={styles.buttonGroupContainer}>
-          <BigButton text='Hard' backgroundColor='lightcoral' onPress={() => console.log(getFactoredEquation('differenceOfSquares', true))} />
-          <SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}}/>
-        </View>
-
-
-      </View>
-      </ScrollView>
-      </View>
-    )
-  }
-
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection : 'column',
-    justifyContent : 'center',
-  },
-  buttonGroupContainer : {
-    flexDirection : 'row',
-    margin : 10,
-  },
-  buttonGroupContainer2 : {
-    flexDirection : 'row',
-  },
-  factorItText : {
-    fontSize : 40,
-    color : 'white',
-    textAlign : 'center',
-    backgroundColor : 'black',
+const mapDispatchToProps = dispatch => {
+  return {
+    onIncrement: () => {
+      dispatch(incrementCounter())
+    },
+    incrementUserValue: (dataPath) => {
+      dispatch(incrementUserValue(dataPath))
+    }
   }
-})
+}
+
+export const HomeScreen = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(HomeScreenPresentation)

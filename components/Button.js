@@ -25,6 +25,7 @@ export class BigButton extends React.Component {
         width={200}
         flexShrink={1}
         onPress={this.props.onPress}
+        style={{margin:5,}}
       />
     )
   }
@@ -46,11 +47,41 @@ export class SquareButton extends React.Component {
   }
 }
 
+export class MathButton extends React.Component {
+  render () {
+    return (
+      <View style={{...this.props.style, backgroundColor:'black',}}>
+        <TouchableOpacity ref='child'
+          activeOpacity={0.70}
+          onPress={this.props.onPress}>
+          <View style={[styles.bigButton,
+                        { backgroundColor:this.props.backgroundColor,
+                          width:this.props.width,
+                          flexShrink:this.props.flexShrink,
+                          padding:10,
+                        },
+                      ]} >
+            <Text style={{textAlign:'center'}}>
+              <Text style={[styles.bigButtonText, {fontFamily:'math-font', fontSize:22}]}>
+                {this.props.textTop}{"\n"}
+              </Text>
+              <Text style={[styles.bigButtonText, {fontFamily:'math-font',fontSize:17}]}>
+                {this.props.textBottom}
+              </Text>
+            </Text>
+
+          </View>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+}
+
 class Button extends React.Component {
 //this.props.navigation.navigate('Easy')
   render () {
     return (
-      <View style={{...this.props.style, backgroundColor:'black'}}>
+      <View style={{...this.props.style, width:this.props.width, backgroundColor:'black'}}>
         <TouchableOpacity ref='child'
           activeOpacity={0.70}
           onPress={this.props.onPress}>
@@ -128,7 +159,7 @@ export class CircularGlowingBorderButton extends React.Component {
         fontSize = {23}
         fontColor = 'black'
         textPadding = {0}
-        textBackgroundColor = 'rgba(255,255,255,0.6)'
+        textBackgroundColor = 'rgba(255,255,255,0.8)'
         fontFamily = 'math-font'
       />
 
@@ -160,7 +191,7 @@ export class RectangularGlowingBorderButton extends React.Component {
         fontSize = {40}
         fontColor = 'black'
         textPadding = {2}
-        textBackgroundColor = 'rgba(255,255,255,0.6)'
+        textBackgroundColor = 'rgba(255,255,255,0.8)'
         fontFamily = 'math-font-narrow'
       />
 

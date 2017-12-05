@@ -58,7 +58,7 @@ export class FactorInputGroup extends React.Component {
 
   render() {
     return (
-      <View style = {{flexDirection:'row', justifyContent:'center', alignItems:'center', flex:1, backgroundColor:'lightblue',}}>
+      <View style = {{flexDirection:'row', justifyContent:'center', alignItems:'center', flex:1, backgroundColor:'darkturquoise',}}>
         <Text style={styles.parenthesis}>(</Text>
 
         <View style = {styles.leftParenthesisMargin}>
