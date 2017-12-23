@@ -9,6 +9,8 @@ import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 import { createLogger } from 'redux-logger'
 import { mainReducer } from './reducers/mainReducer'
+import { getDefaultNewUserDataForFirebase, getNewestVersion } from './database/userDataDefinitions'
+import { ListenForDatabaseOperations } from './database/listenForDatabaseOperations'
 
 import cacheAssetsAsync from './utilities/cacheAssetsAsync';
 
@@ -32,14 +34,9 @@ let store = createStore(
 
 //These are the default values that a new user would start with.
 //add any new user data (e.g. email) within method addDefaultNewUserData()
-const defaultNewUserData = {
-  currentStreak : 0,
-  maxStreak : 0,
-  coolFactor: 1000,
-  newFactor:10,
-}
+const defaultNewUserData = getDefaultNewUserDataForFirebase()
 //Increase version number if you want to add a new key to ensure that new keys are added to existing users
-const newestVersion = 1.03
+const newestVersion = getNewestVersion()
 
 
 // Initialize Firebase
@@ -129,8 +126,12 @@ export default class AppContainer extends React.Component {
 
   componentDidMount(){ //need to unsubscribe still on component removed
     this.setState({showLogin : false})
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig)
+    firebase.database.enableLogging(function(message) {
+      console.log("[FIREBASE]", message);
+    })
     // Listen for authentication state to change.
+    firebase.database().goOnline()
     this.unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
       if (user != null) {
         console.log("We are authenticated now!");
@@ -169,6 +170,7 @@ export default class AppContainer extends React.Component {
           {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
           {Platform.OS === 'android' && <StatusBar backgroundColor="blue" />}
           <RootNavigation />
+          <ListenForDatabaseOperations />
         </View>
       );
     }else{ //if(this.state.showLogin){

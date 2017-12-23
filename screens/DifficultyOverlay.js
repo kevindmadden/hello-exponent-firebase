@@ -16,7 +16,7 @@ import {
   StatusBar,
   Modal,
 } from 'react-native'
-
+import { DIFFICULTY } from '../database/userDataDefinitions'
 import { BigButton, SquareButton, FlexKey } from '../components/Button'
 
 export default class DifficultyOverlay extends React.Component {
@@ -63,22 +63,22 @@ export default class DifficultyOverlay extends React.Component {
                 <BigButton
                   text='Easy'
                   backgroundColor='beige'
-                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:'Easy', title:this.props.title,} )}
+                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:DIFFICULTY.EASY, title:this.props.title,} )}
                 />
                 <BigButton
                   text='Normal'
                   backgroundColor='beige'
-                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:'Normal', title:this.props.title,} )}
+                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:DIFFICULTY.NORMAL, title:this.props.title,} )}
                 />
                 <BigButton
                   text='Hard'
                   backgroundColor='beige'
-                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:'Hard', title:this.props.title,} )}
+                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:DIFFICULTY.HARD, title:this.props.title,} )}
                 />
                 <BigButton
                   text='Insane'
                   backgroundColor='beige'
-                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:'Insane', title:this.props.title,} )}
+                  onPress={() => this.navigateAndClose('FactorQuizScreen', {mode: this.props.mode, difficulty:DIFFICULTY.INSANE, title:this.props.title,} )}
                 />
               </ScrollView>
             </View>

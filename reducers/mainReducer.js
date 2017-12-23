@@ -1,9 +1,10 @@
 import { combineReducers } from 'redux'
-import { counter } from './counter'
-import { databaseOperationsInProgress } from './databaseOperationsInProgress'
+import { database } from './database'
+import { userData } from './userData'
+import { keyboard } from './keyboard'
 
 export const mainReducer = combineReducers({
-  counter,
-  databaseOperationsInProgress,
-  //visibilityFilter
+  database,
+  userData,
+  keyboard,
 })

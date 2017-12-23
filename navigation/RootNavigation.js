@@ -6,7 +6,7 @@ import { StackNavigator } from 'react-navigation';
 import registerForPushNotificationsAsync from '../api/registerForPushNotificationsAsync';
 
 import { HomeScreen } from '../screens/HomeScreen';
-import FactorQuizScreen from '../screens/FactorQuizScreen'
+import { FactorQuizScreen } from '../screens/FactorQuizScreen'
 //height: Platform.OS === "ios" ? 64 : (56 + StatusBar.currentHeight),
 const RootStackNavigator = StackNavigator(
   {

@@ -21,6 +21,7 @@ import { BigButton, SquareButton, FlexKey, MathButton } from '../components/Butt
 import { MonoText } from '../components/StyledText';
 import { getFactoredEquation } from '../logic/differenceOfSquares';
 import DifficultyOverlay from '../screens/DifficultyOverlay'
+import { MODE } from '../database/userDataDefinitions'
 
 import * as firebase from 'firebase';
 
@@ -54,7 +55,6 @@ export class HomeScreenPresentation extends React.Component {
 
   onLoginPress = async () => {
     //const result = await signInWithGoogleAsync()
-    //console.log(result)
     // if there is no result.error or result.cancelled, the user is logged in
     // do something with the result
   }
@@ -102,7 +102,7 @@ export class HomeScreenPresentation extends React.Component {
             textBottom='x²±c'
             width={250}
             flexShrink={1}
-            onPress={() => this.showOverlay('differenceOfSquares', 'Simple', 'palegreen',)}
+            onPress={() => this.showOverlay(MODE.DIFFERENCE_OF_SQUARES, 'Simple', 'palegreen',)}
           />
           <SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}} onPress={()=>this.logoutOfFirebase()} />
         </View>
@@ -114,7 +114,7 @@ export class HomeScreenPresentation extends React.Component {
             textBottom='x²±bx±c'
             width={250}
             flexShrink={1}
-            onPress={() => this.showOverlay('trinomialAis1', 'Intermediate', 'lightsalmon',)}
+            onPress={() => this.showOverlay(MODE.TRINAOMIAL_A_IS_1, 'Intermediate', 'lightsalmon',)}
           />
           <SquareButton text={'increment cool counter'} backgroundColor='moccasin' style={{marginLeft:10}} onPress={()=>this.props.incrementUserValue('coolFactor')} />
         </View>
@@ -126,7 +126,7 @@ export class HomeScreenPresentation extends React.Component {
             textBottom='ax²±bx±c'
             width={250}
             flexShrink={1}
-            onPress={() => this.showOverlay('trinomialAisNot1', 'Complex', 'lightcoral',)}
+            onPress={() => this.showOverlay(MODE.TRINAOMIAL_A_IS_NOT_1, 'Complex', 'lightcoral',)}
           />
           {/*<SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}} onPress={() => this.props.navigation.navigate('FactorQuizScreen')} />*/}
         </View>
