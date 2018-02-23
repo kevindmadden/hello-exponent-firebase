@@ -1,36 +1,35 @@
-import React from 'react';
-import {
-  Image,
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableHighlight,
-  TouchableOpacity,
-  View,
-  Animated,
-  Easing,
-} from 'react-native'
+import { getInitialFactorInputGroupLocalUIState } from '../components/FactorInputGroup'
 
-import { MonoText } from '../components/StyledText'
-import { getEquation } from '../logic/differenceOfSquares'
-import { NumberKeyboard } from '../components/Keyboard'
-import { RectangularGlowingBorderButton, CircularGlowingBorderButton } from '../components/Button'
+export const updateFactorInputGroupLocalUIState = (difficultyMode, newObj) => {
+  return {
+    type: 'UPDATE_FACTOR_INPUT_GROUP_LOCAL_UI_STATE',
+    difficultyMode : difficultyMode,
+    newFactorInputGroupLocalUIState : newObj
+  }
+}
 
-export function respondToKeyPress(nextProps, groupType){
-  if(groupType=='factorGroup'){
-    let lastKeyPressedPropActuallyChanged = !(this.props.lastKeyPressed.time===nextProps.lastKeyPressed.time && this.props.lastKeyPressed.keyValue===nextProps.lastKeyPressed.keyValue) //if the time and keyvalue is the same in both props, key prop did not actually change
-    if(lastKeyPressedPropActuallyChanged){
-      let keyValue = nextProps.lastKeyPressed.keyValue
-      this.setState( (prevState) => {return respondToKeyPressFactorGroup(prevState, keyValue, nextProps, groupType)} )
+export const updateFactorInputGroupLocalUIActiveBox = (difficultyMode, activeBoxName) => {
+  return {
+    type: 'UPDATE_FACTOR_INPUT_GROUP_LOCAL_UI_ACTIVE_BOX',
+    difficultyMode: difficultyMode,
+    activeBoxName: activeBoxName,
+  }
+}
+
+export function updateInputUIState(keyValue, groupType, difficultyMode){
+  return async function(dispatch, getState){
+    if(groupType=='factorGroup'){
+      if(keyValue=='Next Problem'){
+        dispatch(updateFactorInputGroupLocalUIState(difficultyMode, getInitialFactorInputGroupLocalUIState()))
+      }else{
+        dispatch(updateFactorInputGroupLocalUIState(difficultyMode, respondToKeyPressFactorGroup(getState(), keyValue, groupType, difficultyMode)))
+      }
     }
   }
 }
 
-function respondToKeyPressFactorGroup(prevState, keyValue, nextProps, groupType){
-  //let activeGroupName = prevState.activeGroup
-  let activeGroup = prevState//[activeGroupName]
+function respondToKeyPressFactorGroup(state, keyValue, groupType, difficultyMode){
+  let activeGroup = state.userData[difficultyMode]['newFactorInputGroupLocalUIState']
 
   let activeBox = (() => {
     let name = activeGroup['activeBox']
@@ -56,17 +55,7 @@ function respondToKeyPressFactorGroup(prevState, keyValue, nextProps, groupType)
     successful: false,
   }
 
-  if(keyValue === 'Submit'){
-    if(groupType=='factorGroup'){
-      nextProps.onSubmit(activeGroup)
-    }
-  }else if(keyValue === 'No Solution'){
-    if(groupType=='factorGroup'){
-      nextProps.onSubmit('No Solution')
-    }
-  }else if(keyValue === 'Next Problem'){
-      nextProps.onNextProblem()
-  }else if(keyValue === 'Next'){
+  if(keyValue === 'Next'){
     newActiveGroupObj = {updates: {activeBox: nextBox.name}, successful: true }
   }else if(keyValue === '+' || keyValue === '-'){
     if(keyValue==='-') keyValue='-' //bad not actual minus sign: −
@@ -90,11 +79,7 @@ function respondToKeyPressFactorGroup(prevState, keyValue, nextProps, groupType)
 
 export function onPress(boxName){
   this.props.onPress()
-  this.setState( (prevState) => {
-    return {
-      activeBox: boxName
-    }
-  })
+  this.props.updateInputUIStateActiveBox(boxName)
 }
 
 function tryWritingNumeral(activeBox, nextBox, maxNumberSize, keyValue){

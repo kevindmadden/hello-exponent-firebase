@@ -1,11 +1,34 @@
 import * as firebase from 'firebase'
 import { STREAK } from '../database/userDataDefinitions'
+import { getFactorProblem } from '../logic/differenceOfSquares'
+
+export const setNewFactorProblem = (difficultyMode, newFactorProblem) => {
+  return {
+    type: 'SET_NEW_FACTOR_PROBLEM',
+    difficultyMode: difficultyMode,
+    factorProblem: newFactorProblem,
+  }
+}
 
 export const keyboardKeyPressed = (keyPressed) => {
   return {
     type: 'KEYBOARD_KEY_PRESSED',
     keyPressed: keyPressed,
     keyPressedAtTime: Date.now()
+  }
+}
+
+export const changeKeyboardModeToSubmit = () => {
+  return {
+    type: 'CHANGE_KEYBOARD_MODE',
+    mode: 'Submit',
+  }
+}
+
+export const changeKeyboardModeToNextProblem = () => {
+  return {
+    type: 'CHANGE_KEYBOARD_MODE',
+    mode: 'Next Problem',
   }
 }
 
@@ -61,6 +84,12 @@ export function stopUserDifficultyListener(difficultyMode){
   }
 }
 
+export function stopUserProblemListener(difficultyMode){
+  return async function(dispatch, getState){
+    dispatch(stopUserDatabaseListener(''+difficultyMode+'/attemptHistory'))
+  }
+}
+
 //Currently used
 export function stopUserDatabaseListener(dataPath){
   return async function(dispatch, getState){
@@ -87,6 +116,93 @@ export function startUserDifficultyListener(difficultyMode){
         console.log('There was an error calling the on listener in startUserMaxStreakListener thunk')
       }
     )
+  }
+}
+//TODO: Currently, when a user answers a problem correctly, it is marked correct immediately, and the problem will be shown prior to "next problem" being pressed
+//Generate new factor problem if the user answered the most recent problem correctly or chose to skip it
+export function generateNewProblemListener(difficultyMode, difficulty, mode, factorable){
+  return async function(dispatch, getState){
+    let attemptHistoryRef = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory')
+    let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory').orderByKey().limitToLast(1)
+    ref.on(
+      'value',
+      snapshot => {
+        let mostRecentAttempt = () => snapshot.val()[Object.keys(snapshot.val())[0]]
+        if(snapshot.val()==null || mostRecentAttempt()['correct']==true || mostRecentAttempt()['skipped']==true){
+          attemptHistoryRef.push({
+            factorProblem: getFactorProblem(mode, factorable, difficulty),
+            correct: false,
+            skipped: false,
+          })
+        }
+      },
+      error => {
+        console.log(error)
+        console.log('There was an error calling the on listener in startUserCurrentProblemListener thunk')
+      }
+    )
+  }
+}
+
+//Update local state so that the user sees the most recent uncompleted problem to attempt
+export function showLatestProblemListener(difficultyMode){
+  return async function(dispatch, getState){
+    let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory').orderByKey().limitToLast(1)
+    ref.on(
+      'child_added',
+      snapshot => {
+        console.log('inside showLatestProblemListener')
+        console.log(snapshot.key)
+        let newKey = snapshot.key
+        if(snapshot.val()!=null) dispatch(setNewFactorProblem(difficultyMode, {...snapshot.val()['factorProblem'], attemptHistoryKey: snapshot.key} ))},
+      error => {
+        console.log(error)
+        console.log('There was an error calling the on listener in startUserCurrentProblemListener thunk')
+      }
+    )
+  }
+}
+
+export function updateCurrentFactorProblem(difficultyMode, isCorrect, isSkipped=false, isError=false, errorDetails={} ) {
+
+  let attemptHistoryAdditions = (existingErrorDetails={}) => {
+    let myObj = {}
+    if(isSkipped){
+      myObj.skipped = true
+    }else if(isCorrect){
+      myObj.correct = true
+    }else if(isError){ //this should be the only remaining option
+      myObj.error = true
+      myObj.errorDetails = [...existingErrorDetails, errorDetails]
+    }
+    return myObj
+  }
+  console.log('attempt history additions:')
+  console.log(attemptHistoryAdditions())
+
+  return async function(dispatch, getState){
+    dispatch(databaseOperationInProgress())
+    try{
+      let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory/'+(getState().userData[difficultyMode]['factorProblem']['attemptHistoryKey']))
+      var {committed, snapshot} = await ref.transaction( (userData) => { //var is needed so that these variables are available outside try block
+        if(userData==null){
+          return 'loading'
+        }else{
+          return {
+            ...userData,
+            ...(attemptHistoryAdditions()),
+          }
+        }
+      })
+    }catch(e){
+      console.log(e)
+      //database issue occurred
+    }finally{
+      dispatch(databaseOperationFinishedSuccess())
+    }
+    if(committed){
+      return snapshot.val() //.val() MUST be included; if it isn't, it returns an object that looks like a number??
+    }
   }
 }
 

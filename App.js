@@ -127,9 +127,9 @@ export default class AppContainer extends React.Component {
   componentDidMount(){ //need to unsubscribe still on component removed
     this.setState({showLogin : false})
     firebase.initializeApp(firebaseConfig)
-    firebase.database.enableLogging(function(message) {
+    /*firebase.database.enableLogging(function(message) {
       console.log("[FIREBASE]", message);
-    })
+    })*/
     // Listen for authentication state to change.
     firebase.database().goOnline()
     this.unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {

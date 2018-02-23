@@ -1,3 +1,5 @@
+import { DIFFICULTY, MODE } from '../database/userDataDefinitions'
+
 let perfectSquares = [1,4,9,16,25,36,49,64,81,100,121,144,169]
 let notPerfectSquares = [2,3,5,6,7,8,10, 11,12,13,14,15,17,18,19, 20,21,22,23,24,26,27,28,29, 30,31,32,33,34,35,37,38,39, 40,41,42,43,44,45,46,47,48, 50,51,52,53,54,55,56,57,58,59, 60,61,62,63,65,66,67,68,69, 70,71,72,73,74,75,76,77,78,79, 80,82,83,84,85,86,87,88,89, 90,91,92,93,94,95,96,97,98,99, 101,102,103,104,105,106,107,108,109, 110,111,112,113,114,115,116,117,118,119, 120,122,123,124,125,126,127,128,129, 130,131,132,133,134,135,136,137,138,139, 140,141,142,143,145,146,147,148,149, 150,151,152,153,154,155,156,157,158,159, 160,161,162,163,164,165,166,167,168, 170,172,173,174,175]
 
@@ -58,7 +60,7 @@ function pickTrinomialWhenAisNot1(factorable=true, difficulty=1){
   let maxFactorSize = 10
   let maxCValue = 100
   switch(difficulty){
-    case 'Easy':
+    case DIFFICULTY.EASY:
       minX1FactorSize = 1
       maxX1FactorSize = 1
       minX2FactorSize = 2
@@ -67,7 +69,7 @@ function pickTrinomialWhenAisNot1(factorable=true, difficulty=1){
       maxFactorSize = 7
       maxCValue = 15
       break
-    case 'Normal':
+    case DIFFICULTY.NORMAL:
       minX1FactorSize = 1
       maxX1FactorSize = 7
       minX2FactorSize = 2
@@ -76,7 +78,7 @@ function pickTrinomialWhenAisNot1(factorable=true, difficulty=1){
       maxFactorSize = 12
       maxCValue = 25
       break
-    case 'Hard':
+    case DIFFICULTY.HARD:
       minX1FactorSize = 2
       maxX1FactorSize = 12
       minX2FactorSize = 2
@@ -86,7 +88,7 @@ function pickTrinomialWhenAisNot1(factorable=true, difficulty=1){
       maxCValue = 60
       minFactorSize = 2
       break
-    case 'Insane':
+    case DIFFICULTY.INSANE:
       minX1FactorSize = 2
       maxX1FactorSize = 30
       minX2FactorSize = 2
@@ -129,6 +131,12 @@ function pickTrinomialWhenAisNot1(factorable=true, difficulty=1){
       let sqrtDiscriminantAbsVal = Math.sqrt(Math.abs(discriminant))
       if(isDecimalNumber(sqrtDiscriminantAbsVal)) isFactorable=false //if the square root of the absolute value of the discriminant is not an integer, then it is not factorable
     }
+    factoredExpression = {
+      group1 : '',
+      group2 : '',
+      text1 : '',
+      text2 : '',
+    }
   }
   let equation = {
     a : a,
@@ -153,20 +161,20 @@ function pickTrinomialWhenAis1(factorable=true, difficulty=1){
   let maxFactorSize = 10
   let maxCValue = 100
   switch(difficulty){
-    case 'Easy':
+    case DIFFICULTY.EASY:
       maxFactorSize = 8
       maxCValue = 24
       break
-    case 'Normal':
+    case DIFFICULTY.NORMAL:
       maxFactorSize = 12
       maxCValue = 48
       break
-    case 'Hard':
+    case DIFFICULTY.HARD:
       maxFactorSize = 20
       maxCValue = 60
       minFactorSize = 2
       break
-    case 'Insane':
+    case DIFFICULTY.INSANE:
       maxFactorSize = 30
       maxCValue = 200
       minFactorSize = 2
@@ -195,6 +203,12 @@ function pickTrinomialWhenAis1(factorable=true, difficulty=1){
       let sqrtDiscriminantAbsVal = Math.sqrt(Math.abs(discriminant))
       if(isDecimalNumber(sqrtDiscriminantAbsVal)) isFactorable=false //if the square root of the absolute value of the discriminant is not an integer, then it is not factorable
     }
+    factoredExpression = {
+      group1 : '',
+      group2 : '',
+      text1 : '',
+      text2 : '',
+    }
   }
   let equation = {
     a : a,
@@ -216,16 +230,16 @@ function pickDifferenceOfSquares(factorable, difficulty){
 
   let highestSquaredNum = 3
   switch(difficulty){
-    case 'Easy':
+    case DIFFICULTY.EASY:
       highestSquaredNum=6
       break
-    case 'Normal':
+    case DIFFICULTY.NORMAL:
       highestSquaredNum=13
       break
-    case 'Hard':
+    case DIFFICULTY.HARD:
       highestSquaredNum=20
       break
-    case 'Insane':
+    case DIFFICULTY.INSANE:
       highestSquaredNum=35
       break
   }
@@ -243,6 +257,12 @@ function pickDifferenceOfSquares(factorable, difficulty){
     do{
       c=randomlySetSign(getRandomInt(1,highestSquaredNum*highestSquaredNum+1))
     }while(!(isDecimalNumber(Math.sqrt(Math.abs(c)))))
+    factoredExpression = {
+      group1 : '',
+      group2 : '',
+      text1 : '',
+      text2 : '',
+    }
   }
   let equation = {
     a : a,

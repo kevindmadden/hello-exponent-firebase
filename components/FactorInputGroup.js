@@ -13,48 +13,64 @@ import {
   Easing,
 } from 'react-native'
 
-import { respondToKeyPress, onPress } from '../components/RespondToKeyPress'
+import { updateInputUIState, onPress, updateFactorInputGroupLocalUIActiveBox } from '../components/RespondToKeyPress'
 import { RectangularGlowingBorderButton, CircularGlowingBorderButton } from '../components/Button'
+import { connect } from 'react-redux'
 
-export class FactorInputGroup extends React.Component {
+//could use this for mode in the future
+const mapStateToProps = (state, ownProps) => {
+  return {
+    keyPressed: state.keyboard.keyPressed,
+    keyPressedAtTime: state.keyboard.keyPressedAtTime,
+    nextOrder: state.userData[ownProps.difficultyMode]['newFactorInputGroupLocalUIState']['nextOrder'],
+    activeBox: state.userData[ownProps.difficultyMode]['newFactorInputGroupLocalUIState']['activeBox'],
+    boxes: state.userData[ownProps.difficultyMode]['newFactorInputGroupLocalUIState']
+  }
+}
 
-  //options: acceptsVariable, acceptsSquaredVariable, acceptsNumeral, acceptsSign, leadingSignBox (this is for when there is a sign box at the very front)
-  getInitialState(){
-    return {
-        activeBox: 'firstSumLeftSummand',
-        firstSumLeftSummand:    { text:'', acceptsVariable:true, acceptsNumeral:true },
-        firstSumMiddleSign:     { text:'', acceptsSign:true },
-        firstSumRightSummand:   { text:'', acceptsNumeral:true },
-        secondSumLeftSummand:   { text:'', acceptsVariable:true, acceptsNumeral:true },
-        secondSumMiddleSign:    { text:'', acceptsSign:true },
-        secondSumRightSummand:  { text:'', acceptsNumeral:true },
-        nextOrder: ['firstSumLeftSummand', 'firstSumMiddleSign', 'firstSumRightSummand', 'secondSumLeftSummand', 'secondSumMiddleSign', 'secondSumRightSummand'],
-        maxNumberSize : 3,
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    updateInputUIState: (keyValue) => {
+      dispatch(updateInputUIState(keyValue, 'factorGroup', ownProps.difficultyMode))
+    },
+    updateInputUIStateActiveBox: (activeBoxName) => {
+      dispatch(updateFactorInputGroupLocalUIActiveBox(ownProps.difficultyMode, activeBoxName))
     }
   }
+}
 
-  constructor(props) {
-    super(props)
-    this.state = this.getInitialState()
+//options: acceptsVariable, acceptsSquaredVariable, acceptsNumeral, acceptsSign, leadingSignBox (this is for when there is a sign box at the very front)
+export function getInitialFactorInputGroupLocalUIState(){
+  return {
+      activeBox: 'firstSumLeftSummand',
+      firstSumLeftSummand:    { text:'', acceptsVariable:true, acceptsNumeral:true },
+      firstSumMiddleSign:     { text:'', acceptsSign:true },
+      firstSumRightSummand:   { text:'', acceptsNumeral:true },
+      secondSumLeftSummand:   { text:'', acceptsVariable:true, acceptsNumeral:true },
+      secondSumMiddleSign:    { text:'', acceptsSign:true },
+      secondSumRightSummand:  { text:'', acceptsNumeral:true },
+      nextOrder: ['firstSumLeftSummand', 'firstSumMiddleSign', 'firstSumRightSummand', 'secondSumLeftSummand', 'secondSumMiddleSign', 'secondSumRightSummand'],
+      maxNumberSize : 3,
   }
+}
 
-  restoreInitialState(){
-    this.setState(this.getInitialState())
-  }
+export class FactorInputGroupPresentation extends React.Component {
 
   componentWillReceiveProps(nextProps){
     if(this.props.enabled && !nextProps.enabled){
-      this.setState({activeBox:null}) //there is no default box in a group if you go back to that group after it has already been the enabled group
+      this.props.updateInputUIStateActiveBox(null) //there is no default box in a group if you go back to that group after it has already been the enabled group
     }
-    if(this.props.enabled) respondToKeyPress.call(this, nextProps, 'factorGroup')
-
-    //reset to initial state if trigger changes
-    if(this.props.restoreInitialStateTrigger!==nextProps.restoreInitialStateTrigger) this.restoreInitialState()
+    if(nextProps.enabled){
+      let lastKeyPressedPropActuallyChanged = !(this.props.keyPressedAtTime===nextProps.keyPressedAtTime && this.props.keyPressed===nextProps.keyPressed) //if the time and keyvalue is the same in both props, key prop did not actually change
+      if(lastKeyPressedPropActuallyChanged){
+        this.props.updateInputUIState(nextProps.keyPressed)
+      }
+    }
   }
 
-  getName = (nameIndex) => this.state.nextOrder[nameIndex]
-  getText = (nameIndex) => this.state[this.getName(nameIndex)]['text']
-  getNameOfActiveButton = () => this.props.enabled ? this.state.activeBox : null
+  getName = (nameIndex) => this.props.nextOrder[nameIndex]
+  getText = (nameIndex) => this.props.boxes[this.getName(nameIndex)]['text']
+  getNameOfActiveButton = () => this.props.enabled ? this.props.activeBox : null
 
   render() {
     return (
@@ -152,3 +168,9 @@ const styles = StyleSheet.create({
     marginRight : -2,
   }
 })
+
+
+export const FactorInputGroup = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(FactorInputGroupPresentation)

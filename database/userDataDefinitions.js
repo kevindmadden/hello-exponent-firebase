@@ -1,5 +1,7 @@
+import { getInitialFactorInputGroupLocalUIState } from '../components/FactorInputGroup'
+
 //Increase version number if you want to add a new key to ensure that new keys are added to existing users
-const newestVersion = 1.06
+const newestVersion = 1.111111
 export const getNewestVersion = () => newestVersion
 
 //These are the default values that a new user would start with.
@@ -10,6 +12,7 @@ const getDefaultNewUserData = (forFirebase=true) => {
     maxStreak : 0,
     coolFactor: 1000,
     newFactor:10,
+    mynewfactor:1000000,
     ...getModeDifficultyObjects(forFirebase),
   }
 }
@@ -51,6 +54,25 @@ const getModeDifficultyObjects = (forFirebase) => {
     for(const difficulty in DIFFICULTY){
       let modeDifficultyKey = getModeDifficultyKey(MODE[mode],DIFFICULTY[difficulty])
       newObj[modeDifficultyKey]={}
+
+      //only local state needs to store ui state of factor group
+      if(!forFirebase){
+        newObj[modeDifficultyKey]['newFactorInputGroupLocalUIState'] = getInitialFactorInputGroupLocalUIState()
+        newObj[modeDifficultyKey]['factorProblem'] = null
+      }
+
+      let modeDifficultyKeyUserAttempts = modeDifficultyKey+'_userAttemps'
+      //newObj[modeDifficultyKeyUserAttempts]={}
+      //newObj[modeDifficultyKeyUserAttempts]['mytestkey']=[1,2,3,4,5]
+
+      newObj[modeDifficultyKey]['last50AttemptsWasCorrect']=true
+
+      /*newObj[modeDifficultyKeyUserAttempts]['last50AttemptsWasCorrect'] = [null]
+      newObj[modeDifficultyKeyUserAttempts]['last50AttemptsWasSkipped'] = [null]
+      newObj[modeDifficultyKeyUserAttempts]['last20MissesErrorTypes'] = []
+      newObj[modeDifficultyKeyUserAttempts]['last20MissesEquation'] = []
+      newObj[modeDifficultyKeyUserAttempts]['last20MissesSubmissions'] = [] //shape: [[submissionForEqn1, submissionForEqn1], [submissionForEqn2, submissionForEqn2,...],...]
+*/
       for(const streak in STREAK){
         //only the local state needs to store information about whether stuff is loading
         if(forFirebase){
@@ -58,7 +80,6 @@ const getModeDifficultyObjects = (forFirebase) => {
         }else{
           newObj[modeDifficultyKey][STREAK[streak]] = {value:0, loading:true}
         }
-
       }
     }
   }

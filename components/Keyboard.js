@@ -18,11 +18,30 @@ import {
 import { BigButton, SquareButton, FlexKey } from '../components/Button';
 import { MonoText } from '../components/StyledText';
 import { getFactoredEquation } from '../logic/differenceOfSquares';
+import { connect } from 'react-redux'
+import { keyboardKeyPressed } from '../actions/mainActions'
 
-export class NumberKeyboard extends React.Component {
+//could use this for mode in the future
+const mapStateToProps = state => {
+  return {
+    mode: state.keyboard.mode,
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    keyboardKeyPressed: (keyPressed) => {
+      dispatch(keyboardKeyPressed(keyPressed))
+    },
+  }
+}
+
+
+class NumberKeyboardPresentation extends React.Component {
 
   returnKeyValue(keyValue){
-    return this.props.onPress.bind(this, keyValue)
+    return ()=>this.props.keyboardKeyPressed(keyValue)
+    //return this.props.onPress.bind(this, keyValue)
   }
 
   getTopKeys(){
@@ -81,3 +100,8 @@ export class NumberKeyboard extends React.Component {
 
 
 }
+
+export const NumberKeyboard = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(NumberKeyboardPresentation)
