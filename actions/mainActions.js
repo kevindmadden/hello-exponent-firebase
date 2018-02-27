@@ -1,5 +1,5 @@
 import * as firebase from 'firebase'
-import { STREAK } from '../database/userDataDefinitions'
+import { STREAK, MISTAKE } from '../database/userDataDefinitions'
 import { getFactorProblem } from '../logic/differenceOfSquares'
 
 export const setNewFactorProblem = (difficultyMode, newFactorProblem) => {
@@ -118,21 +118,24 @@ export function startUserDifficultyListener(difficultyMode){
     )
   }
 }
-//TODO: Currently, when a user answers a problem correctly, it is marked correct immediately, and the problem will be shown prior to "next problem" being pressed
-//Generate new factor problem if the user answered the most recent problem correctly or chose to skip it
-export function generateNewProblemListener(difficultyMode, difficulty, mode, factorable){
+
+export function generateFactorProblem(isInitialLoad, difficultyMode, difficulty, mode, factorable){
   return async function(dispatch, getState){
-    let attemptHistoryRef = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory')
-    let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory').orderByKey().limitToLast(1)
-    ref.on(
+    let mostRecentChildRef = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory/status').orderByKey().limitToLast(1)
+    mostRecentChildRef.once(
       'value',
       snapshot => {
-        let mostRecentAttempt = () => snapshot.val()[Object.keys(snapshot.val())[0]]
-        if(snapshot.val()==null || mostRecentAttempt()['correct']==true || mostRecentAttempt()['skipped']==true){
-          attemptHistoryRef.push({
-            factorProblem: getFactorProblem(mode, factorable, difficulty),
-            correct: false,
-            skipped: false,
+        let mostRecentStatus = () => snapshot.val()[Object.keys(snapshot.val())[0]]
+        /* A new problem should be generated without restrictions when requested if it is not the initial load.
+         If it is the initial load, a new problem should be generated only if there are no problems yet in attemptHistory
+           or if the last problem the user attempted was correct or skipped (this is necessary becuase the user will not have a "next problem" button) */
+        let shouldGenerateNewProblem = isInitialLoad==false ? true : (snapshot.val()==null || mostRecentStatus()['correct']==true || mostRecentStatus()['skipped']==true)
+        if(shouldGenerateNewProblem){
+          let attemptHistoryRef = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory')
+          let newKey = firebase.database().ref().push().key
+          attemptHistoryRef.update({ //NOTE: this is a multi-location update; full paths from the ref must be provided because data at each path will be overwritten
+            ['status/'+newKey] : true,
+            ['problems/'+newKey] : getFactorProblem(mode, factorable, difficulty),
           })
         }
       },
@@ -147,14 +150,14 @@ export function generateNewProblemListener(difficultyMode, difficulty, mode, fac
 //Update local state so that the user sees the most recent uncompleted problem to attempt
 export function showLatestProblemListener(difficultyMode){
   return async function(dispatch, getState){
-    let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory').orderByKey().limitToLast(1)
+    let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory/problems').orderByKey().limitToLast(1)
     ref.on(
       'child_added',
       snapshot => {
         console.log('inside showLatestProblemListener')
         console.log(snapshot.key)
         let newKey = snapshot.key
-        if(snapshot.val()!=null) dispatch(setNewFactorProblem(difficultyMode, {...snapshot.val()['factorProblem'], attemptHistoryKey: snapshot.key} ))},
+        if(snapshot.val()!=null) dispatch(setNewFactorProblem(difficultyMode, {...snapshot.val(), attemptHistoryKey: snapshot.key} ))},
       error => {
         console.log(error)
         console.log('There was an error calling the on listener in startUserCurrentProblemListener thunk')
@@ -163,17 +166,99 @@ export function showLatestProblemListener(difficultyMode){
   }
 }
 
-export function updateCurrentFactorProblem(difficultyMode, isCorrect, isSkipped=false, isError=false, errorDetails={} ) {
+export const updateFactorProblemStatistics = (difficultyMode, uid, numCorrect, numSkipped, numMistakes, numOfMistakeTypes, problemsCounter, identity='me') => {
+  return {
+    type: 'ADD_USER_TO_CLASS_STATISTICS',
+    difficultyMode,
+    uid,
+    numCorrect,
+    numSkipped,
+    numMistakes,
+    numOfMistakeTypes,
+    problemsCounter,
+    identity,
+  }
+}
 
-  let attemptHistoryAdditions = (existingErrorDetails={}) => {
+//TODO: make this a child_added event with a listener so that users will appear as they join
+export function startClassCodeGroupListener(classCode, difficultyMode='differenceOfSquares_easy'){ //TODO: Remove hard-coded difficulty mode (if a default is needed, pull it from DIFFICULTY/MODE objects)
+  return async function(dispatch, getState){
+    let classCodeMemberUIDs = {}
+    let classCodeMembersRef = firebase.database().ref('classCodes/'+classCode+'/members') //there is no need to download every member of the class to check existence
+    await classCodeMembersRef.once(
+      'value',
+      snapshot => {
+        if(snapshot.exists()){
+          console.log(snapshot.val())
+          classCodeMemberUIDs = snapshot.val()
+          console.log(classCodeMemberUIDs)
+          console.log(Object.keys(classCodeMemberUIDs))
+          for(const firebaseUID of Object.keys(classCodeMemberUIDs) ){
+              dispatch(startFactorProblemStatisticsListener(difficultyMode, firebaseUID))
+          }
+        }
+      },
+      error => { console.log(error) }
+    )
+  }
+}
+
+//TODO: Exapand to multiple users by running foreach userid in some list
+//TODO: Remove listener(s) when finished with it/them
+export function startFactorProblemStatisticsListener(difficultyMode, firebaseUID, pastXNumOfProblems=10){
+  return async function(dispatch, getState){
+    let ref = firebase.database().ref('users/'+firebaseUID+'/'+difficultyMode+'/attemptHistory/status').orderByKey().limitToLast(pastXNumOfProblems)
+    ref.on(
+      'value',
+      snapshot => {
+        if(snapshot.val()!=null){
+          let numCorrect = 0
+          let numSkipped = 0
+          let numMistakes = 0
+          let numOfMistakeTypes = {}
+          for(let mistakeType in MISTAKE){
+            numOfMistakeTypes[MISTAKE[mistakeType]] = 0
+          }
+
+          let problemsCounter = 0
+          snapshot.forEach( (childSnap) => {
+            problemsCounter++
+            if(childSnap.child('skipped').exists()){
+              numSkipped++
+            }else if(childSnap.child('correct').exists()){
+              numCorrect++
+            }
+            if(childSnap.child('mistake').exists()) numMistakes++
+            for(let mistakeType in MISTAKE){
+              if(childSnap.child(MISTAKE[mistakeType]).exists()) numOfMistakeTypes[MISTAKE[mistakeType]]++
+            }
+          })
+          let uid = firebaseUID
+          //TODO: Add identity feature back in
+          //let identity = firebaseUID.displayName
+          //TODO: update dispatch call so it has the variable for identity
+          dispatch(updateFactorProblemStatistics(difficultyMode, uid, numCorrect, numSkipped, numMistakes, numOfMistakeTypes, problemsCounter, 'identity: someone'))
+        }
+      },
+      error => {
+        console.log(error)
+        console.log('There was an error calling the on listener in startUserCurrentProblemListener thunk')
+      }
+    )
+  }
+}
+
+//TODO: Add additional errors rather than overwriting previous errors
+export function updateCurrentFactorProblem(difficultyMode, isCorrect, isSkipped=false, isMistake=false, mistakeDetails={} ) {
+
+  let attemptHistoryAdditions = () => {
     let myObj = {}
     if(isSkipped){
       myObj.skipped = true
     }else if(isCorrect){
       myObj.correct = true
-    }else if(isError){ //this should be the only remaining option
-      myObj.error = true
-      myObj.errorDetails = [...existingErrorDetails, errorDetails]
+    }else if(isMistake){ //this should be the only remaining option
+      myObj = {mistake:true, ...mistakeDetails}
     }
     return myObj
   }
@@ -183,15 +268,12 @@ export function updateCurrentFactorProblem(difficultyMode, isCorrect, isSkipped=
   return async function(dispatch, getState){
     dispatch(databaseOperationInProgress())
     try{
-      let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory/'+(getState().userData[difficultyMode]['factorProblem']['attemptHistoryKey']))
+      let ref = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/'+difficultyMode+'/attemptHistory/status/'+(getState().userData[difficultyMode]['factorProblem']['attemptHistoryKey']))
       var {committed, snapshot} = await ref.transaction( (userData) => { //var is needed so that these variables are available outside try block
         if(userData==null){
           return 'loading'
         }else{
-          return {
-            ...userData,
-            ...(attemptHistoryAdditions()),
-          }
+          return userData===true ? attemptHistoryAdditions() : {...userData, ...(attemptHistoryAdditions())}
         }
       })
     }catch(e){
@@ -254,6 +336,92 @@ export function resetUserCurrentStreakValue(difficultyMode) {
     }
     if(committed){
       return snapshot.val()
+    }
+  }
+}
+
+export function generateClassCode() {
+  return async function(dispatch){
+    dispatch(databaseOperationInProgress())
+    let classCode=9
+    let nonDuplicateClassCodeFound = false
+    try{
+      let highestClassCodeRef = firebase.database().ref('classCodes').orderByKey().limitToLast(1)
+      await highestClassCodeRef.once(
+        'value',
+        snapshot => {
+          if(snapshot.exists()) classCode=parseInt(Object.keys(snapshot.val())[0],10) //convert number string to number
+          console.log('highestClassCodeRef:')
+          console.log(snapshot.val())
+          console.log('classCode:')
+          console.log(classCode)
+        },
+        error => {
+          console.log(error)
+          console.log('There was an error calling the on listener in startUserCurrentProblemListener thunk')
+        }
+      )
+      while(!nonDuplicateClassCodeFound){
+        classCode=classCode+1
+        let ref = firebase.database().ref('classCodes/'+classCode)
+        var {committed, snapshot} = await ref.transaction( snapshot => { //var is needed so that these variables are available outside try block
+          if(snapshot==null){
+            return { owner : {[firebase.auth().currentUser.uid] : true} }
+          }else{
+            return; //abort the transaction if this classcode already exists
+          }
+        })
+
+        /* In transactions, you cannot distingish between whether 'null' means data doesn't exist and data hasn't been loaded yet.
+        The below checks whether the class code for the user now exists; if it does, then break out of the loop and stop trying to create a code */
+        let checkRef = firebase.database().ref('classCodes/'+classCode+'/owner/'+firebase.auth().currentUser.uid)
+        await checkRef.once(
+          'value',
+          snapshot => {
+            if(snapshot.exists()) nonDuplicateClassCodeFound = true
+          },
+          error => {
+            console.log(error)
+            console.log('There was an error checking whether the class code was successfully created')
+          }
+        )
+
+        // If class code was successfully created, list the class code as belonging to user in user's data
+        if(nonDuplicateClassCodeFound){
+          let classCodeUserRef = firebase.database().ref('users/'+firebase.auth().currentUser.uid+'/classCodesOwner/'+classCode)
+          await classCodeUserRef.set(true)
+        }
+      }
+    }catch(e){
+      console.log(e)
+      //database issue occurred
+    }finally{
+      dispatch(databaseOperationFinishedSuccess())
+    }
+  }
+}
+
+export function joinClassCodeGroup(classCode) {
+  return async function(dispatch){
+    dispatch(databaseOperationInProgress())
+    try{
+      let classCodeExists = false
+      let classCodeRef = firebase.database().ref('classCodes/'+classCode+'/owner') //there is no need to download every member of the class to check existence
+      await classCodeRef.once(
+        'value',
+        snapshot => {
+          if(snapshot.exists()) classCodeExists = true
+        },
+        error => { console.log(error) }
+      )
+      if(classCodeExists){
+        let classCodeMemberRef = firebase.database().ref('classCodes/'+classCode+'/members/'+firebase.auth().currentUser.uid)
+        await classCodeMemberRef.set(true)
+      }
+    }catch(e){
+      console.log(e)
+    }finally{
+      dispatch(databaseOperationFinishedSuccess())
     }
   }
 }

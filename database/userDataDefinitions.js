@@ -20,6 +20,17 @@ const getDefaultNewUserData = (forFirebase=true) => {
 export const getDefaultNewUserDataForFirebase = () => getDefaultNewUserData(true)
 export const getDefaultNewUserDataForLocalState = () => getDefaultNewUserData(false)
 
+//Factor Problem Mistake Types
+export const MISTAKE = {
+  SIGN : 'sign',
+  F_PRODUCT : 'F_Product',
+  OI_PRODUCT : 'OI_Product',
+  L_PRODUCT : 'L_Product',
+  SUBMITTED_NO_SOLUTION_WHEN_SOLUTION_EXISTS : 'badNoSolutionClaim',
+  SUBMISSION_MADE_WHEN_NO_SOLUTION_EXISTS :  'badSolutionClaim',
+  OTHER : 'other',
+}
+
 //Mode string definitions
 export const MODE = {
   DIFFERENCE_OF_SQUARES : 'differenceOfSquares',
@@ -61,18 +72,6 @@ const getModeDifficultyObjects = (forFirebase) => {
         newObj[modeDifficultyKey]['factorProblem'] = null
       }
 
-      let modeDifficultyKeyUserAttempts = modeDifficultyKey+'_userAttemps'
-      //newObj[modeDifficultyKeyUserAttempts]={}
-      //newObj[modeDifficultyKeyUserAttempts]['mytestkey']=[1,2,3,4,5]
-
-      newObj[modeDifficultyKey]['last50AttemptsWasCorrect']=true
-
-      /*newObj[modeDifficultyKeyUserAttempts]['last50AttemptsWasCorrect'] = [null]
-      newObj[modeDifficultyKeyUserAttempts]['last50AttemptsWasSkipped'] = [null]
-      newObj[modeDifficultyKeyUserAttempts]['last20MissesErrorTypes'] = []
-      newObj[modeDifficultyKeyUserAttempts]['last20MissesEquation'] = []
-      newObj[modeDifficultyKeyUserAttempts]['last20MissesSubmissions'] = [] //shape: [[submissionForEqn1, submissionForEqn1], [submissionForEqn2, submissionForEqn2,...],...]
-*/
       for(const streak in STREAK){
         //only the local state needs to store information about whether stuff is loading
         if(forFirebase){
@@ -81,6 +80,17 @@ const getModeDifficultyObjects = (forFirebase) => {
           newObj[modeDifficultyKey][STREAK[streak]] = {value:0, loading:true}
         }
       }
+    }
+  }
+  return newObj
+}
+
+export const getDefaultClassStatisticsState = () => {
+  let newObj = {}
+  for(const mode in MODE){
+    for(const difficulty in DIFFICULTY){
+      let modeDifficultyKey = getModeDifficultyKey(MODE[mode],DIFFICULTY[difficulty])
+      newObj[modeDifficultyKey]={}
     }
   }
   return newObj

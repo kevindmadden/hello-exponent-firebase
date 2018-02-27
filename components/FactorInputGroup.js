@@ -13,7 +13,7 @@ import {
   Easing,
 } from 'react-native'
 
-import { updateInputUIState, onPress, updateFactorInputGroupLocalUIActiveBox } from '../components/RespondToKeyPress'
+import { updateInputUIState, onPress, updateFactorInputGroupLocalUIActiveBox, resetInputUIState } from '../components/RespondToKeyPress'
 import { RectangularGlowingBorderButton, CircularGlowingBorderButton } from '../components/Button'
 import { connect } from 'react-redux'
 
@@ -35,7 +35,10 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     },
     updateInputUIStateActiveBox: (activeBoxName) => {
       dispatch(updateFactorInputGroupLocalUIActiveBox(ownProps.difficultyMode, activeBoxName))
-    }
+    },
+    resetInputUIState: () => {
+      dispatch(resetInputUIState(ownProps.difficultyMode))
+    },
   }
 }
 
@@ -55,6 +58,10 @@ export function getInitialFactorInputGroupLocalUIState(){
 }
 
 export class FactorInputGroupPresentation extends React.Component {
+
+  componentDidMount(){
+    this.props.resetInputUIState()
+  }
 
   componentWillReceiveProps(nextProps){
     if(this.props.enabled && !nextProps.enabled){

@@ -28,6 +28,12 @@ export function updateInputUIState(keyValue, groupType, difficultyMode){
   }
 }
 
+export function resetInputUIState(difficultyMode){
+  return async function(dispatch, getState){
+    dispatch(updateFactorInputGroupLocalUIState(difficultyMode, getInitialFactorInputGroupLocalUIState()))
+  }
+}
+
 function respondToKeyPressFactorGroup(state, keyValue, groupType, difficultyMode){
   let activeGroup = state.userData[difficultyMode]['newFactorInputGroupLocalUIState']
 

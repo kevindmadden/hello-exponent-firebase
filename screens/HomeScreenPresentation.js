@@ -131,6 +131,16 @@ export class HomeScreenPresentation extends React.Component {
           {/*<SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}} onPress={() => this.props.navigation.navigate('FactorQuizScreen')} />*/}
         </View>
 
+        <View style={styles.buttonGroupContainer}>
+          <MathButton
+            backgroundColor='white'
+            textTop='Class Codes'
+            textBottom='Information'
+            width={250}
+            flexShrink={1}
+            onPress={() => this.props.navigation.navigate('ClassCodeScreen' )}
+          />
+        </View>
 
       </View>
       </ScrollView>

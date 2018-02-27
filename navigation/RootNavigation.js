@@ -7,6 +7,7 @@ import registerForPushNotificationsAsync from '../api/registerForPushNotificatio
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { FactorQuizScreen } from '../screens/FactorQuizScreen'
+import { ClassCodeScreen } from '../screens/ClassCodeScreen'
 //height: Platform.OS === "ios" ? 64 : (56 + StatusBar.currentHeight),
 const RootStackNavigator = StackNavigator(
   {
@@ -16,6 +17,9 @@ const RootStackNavigator = StackNavigator(
     FactorQuizScreen: {
       screen: FactorQuizScreen,
     },
+    ClassCodeScreen: {
+      screen: ClassCodeScreen,
+    }
   },
   {
     navigationOptions: () => ({

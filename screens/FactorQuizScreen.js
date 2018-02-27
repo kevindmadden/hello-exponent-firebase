@@ -23,10 +23,11 @@ import { FactorInputGroup } from '../components/FactorInputGroup'
 import { RectangularGlowingBorderButton, CircularGlowingBorderButton, BigButton, SquareButton } from '../components/Button'
 import { getFactorProblem } from '../logic/differenceOfSquares'
 import { incrementUserStreakValues, resetUserCurrentStreakValue,
-startUserDifficultyListener, stopUserDifficultyListener, stopUserProblemListener, generateNewProblemListener, showLatestProblemListener,
+startUserDifficultyListener, stopUserDifficultyListener, stopUserProblemListener, generateFactorProblem, showLatestProblemListener,
 updateCurrentFactorProblem,
+startFactorProblemStatisticsListener,
 changeKeyboardModeToSubmit, changeKeyboardModeToNextProblem, setNewFactorProblem } from '../actions/mainActions'
-import { getModeDifficultyKey, STREAK } from '../database/userDataDefinitions'
+import { getModeDifficultyKey, STREAK, MISTAKE } from '../database/userDataDefinitions'
 import { connect } from 'react-redux'
 
 export class FactorQuizScreen extends React.Component {
@@ -81,13 +82,17 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     turnOnDatabaseListeners: (factorable) => {
       console.log('turning on listnerrs!!!!!!')
       dispatch(startUserDifficultyListener(difficultyMode))
-      dispatch(generateNewProblemListener(difficultyMode, ownProps.difficulty, ownProps.mode, factorable))
+      dispatch(generateFactorProblem(true, difficultyMode, ownProps.difficulty, ownProps.mode, factorable))
       dispatch(showLatestProblemListener(difficultyMode))
+      dispatch(startFactorProblemStatisticsListener(difficultyMode))
     },
     turnOffDatabaseListeners: () => {
       console.log('turning OFF listnerrs!!!!!!')
       dispatch(stopUserDifficultyListener(difficultyMode))
       dispatch(stopUserProblemListener(difficultyMode))
+    },
+    generateNewFactorProblem: (factorable) => {
+      dispatch(generateFactorProblem(false, difficultyMode, ownProps.difficulty, ownProps.mode, factorable))
     },
     changeKeyboardModeToSubmit: () => {
       dispatch(changeKeyboardModeToSubmit())
@@ -101,12 +106,16 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     factorProblemIsCorrect: () => {
       dispatch(updateCurrentFactorProblem(difficultyMode, true))
     },
+    factorProblemMistakeMade: (mistakes) => {
+      dispatch(updateCurrentFactorProblem(difficultyMode, false, false, true, mistakes))
+    }
   }
 }
 
 class FactorDisplayPresentation extends React.Component {
 
   componentDidMount(){
+    this.props.changeKeyboardModeToSubmit()
     this.props.turnOnDatabaseListeners(this.decideIfFactorable())
     //if(!this.props.factorProblem) this.props.setNewFactorProblem(this.getFactorProblem(this.decideIfFactorable()))
   }
@@ -155,6 +164,7 @@ class FactorDisplayPresentation extends React.Component {
         this.onCorrectSubmission()
       }else{
         this.setState({submissionFeedback: 'Try again! There is a solution.'})
+        this.props.factorProblemMistakeMade({[MISTAKE.SUBMITTED_NO_SOLUTION_WHEN_SOLUTION_EXISTS]:true})
         this.onIncorrectSubmission()
       }
     }else{ //if the user submitted a solution
@@ -191,6 +201,7 @@ class FactorDisplayPresentation extends React.Component {
                  (submittedText1WithMinus==actualText1 && submittedText2WithPlus==actualText2) ||
                  (submittedText1WithMinus==actualText1 && submittedText2WithPlus==actualText2) ){
           this.setState({submissionFeedback: 'Close...! Check your signs.'})
+          this.props.factorProblemMistakeMade({[MISTAKE.SIGN]:true})
           this.onIncorrectSubmission()
         //Check to see what specific factoring errors were made or if user forgot to include x's in leftSummands
         }else{
@@ -237,19 +248,28 @@ class FactorDisplayPresentation extends React.Component {
             if((submittedSum1SignedRightSummand*submittedSum2SignedRightSummand)!=cVar) L_product_error=true
 
             let submissionFeedback = ''
+            let mistakesMade = {}
             if(F_product_error){
               submissionFeedback+='F-Product Error, '
+              mistakesMade = {...mistakesMade, [MISTAKE.F_PRODUCT]:true}
             }
             if(OI_product_error){
               submissionFeedback+='OI-Product Error, '
+              mistakesMade = {...mistakesMade, [MISTAKE.OI_PRODUCT]:true}
             }
             if(L_product_error){
               submissionFeedback+='L-Product Error, '
+              mistakesMade = {...mistakesMade, [MISTAKE.L_PRODUCT]:true}
             }
             if(!this.props.factorProblem.factorable){
               submissionFeedback+='Tried to solve unsolvable problem'
+              mistakesMade = {...mistakesMade, [MISTAKE.SUBMISSION_MADE_WHEN_NO_SOLUTION_EXISTS]:true}
             }
-            submissionFeedback=='' ? 'Try again!' : submissionFeedback
+            if(submissionFeedback=''){ //this should never be true
+              submissionFeedback='Try again!'
+              mistakesMade = {...mistakesMade, [MISTAKE.OTHER]:true}
+            }
+            this.props.factorProblemMistakeMade(mistakesMade)
             this.setState({submissionFeedback: submissionFeedback})
             this.onIncorrectSubmission()
           }
@@ -316,6 +336,7 @@ class FactorDisplayPresentation extends React.Component {
 
   getNextProblemAndResetComponent(){
     //this.props.setNewFactorProblem(this.getFactorProblem(this.decideIfFactorable()))
+    this.props.generateNewFactorProblem(this.decideIfFactorable())
     this.setState({
       correct: false,
       displaySubmissionFeedback:false,
