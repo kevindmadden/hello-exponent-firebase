@@ -7,7 +7,6 @@ import RootNavigation from './navigation/RootNavigation';
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
-import { createLogger } from 'redux-logger'
 import { mainReducer } from './reducers/mainReducer'
 import { getDefaultNewUserDataForFirebase, getNewestVersion } from './database/userDataDefinitions'
 import { ListenForDatabaseOperations } from './database/listenForDatabaseOperations'
@@ -22,13 +21,24 @@ import cacheAssetsAsync from './utilities/cacheAssetsAsync';
 
 import * as firebase from 'firebase'
 
-//Create redux store
-const loggerMiddleware = createLogger()
+if(!__DEV__) {
+    console = {};
+    console.log = () => {};
+    console.error = () => {};
+}
+
+
+const middlewares = [thunkMiddleware];
+
+if (process.env.NODE_ENV === `development`) {
+  const { logger } = require(`redux-logger`); //redux-logger dramtically hurts performance; logging should only be included in dev mode
+  middlewares.push(logger);
+}
+
 let store = createStore(
   mainReducer,
   applyMiddleware(
-    thunkMiddleware, // lets us dispatch() functions
-    loggerMiddleware // neat middleware that logs actions
+    ...middlewares
   )
 )
 
@@ -53,6 +63,9 @@ const firebaseConfig = {
 export default class AppContainer extends React.Component {
   constructor(props){
     super(props)
+
+    console.ignoredYellowBox = ['Setting a timer'] //this was a solution suggested to suprress this particular non-problematic error: https://github.com/facebook/react-native/issues/12981
+
     this.state = {
       showLogin : false,
       firebaseReady : false,
@@ -134,13 +147,11 @@ export default class AppContainer extends React.Component {
     firebase.database().goOnline()
     this.unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
       if (user != null) {
-        console.log("We are authenticated now!");
         this.setupUserInDatabase()
       }else{
         //prompt user for login
         //const result = await signInWithGoogleAsync()
         this.setState({firebaseReady : false, showLogin : true})
-        console.log('Login prompt')
       }
 
       // Do other things

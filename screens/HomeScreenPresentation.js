@@ -1,27 +1,19 @@
 import React from 'react';
 import Expo from 'expo'
 import {
-  Image,
-  Linking,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableHighlight,
-  TouchableOpacity,
   View,
   BackHandler,
-  Webview,
-  TextInput,
   StatusBar,
-  Modal,
 } from 'react-native';
 
-import { BigButton, SquareButton, FlexKey, MathButton } from '../components/Button';
-import { MonoText } from '../components/StyledText';
-import { getFactoredEquation } from '../logic/differenceOfSquares';
+import { MathButton, SquareMathButton, RectangleMathButton } from '../components/Button';
 import DifficultyOverlay from '../screens/DifficultyOverlay'
 import { MODE } from '../database/userDataDefinitions'
+import { EnterClassCodePopup } from '../screens/EnterClassCodePopup'
 
 import * as firebase from 'firebase';
 
@@ -30,14 +22,12 @@ export class HomeScreenPresentation extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      equation: {equationString:'Placeholder'},
-      keyValue:'',
       showOverlay:false,
       lastSelectedMode:'differenceOfSquares',
       lastSelectedTitle:'Simple',
       lastSelectedColor:'palegreen',
+      joinClassPopupVisible:false,
     }
-
   }
 
   static navigationOptions = {
@@ -46,17 +36,11 @@ export class HomeScreenPresentation extends React.Component {
   }
 
   componentDidMount() {
-    BackHandler.addEventListener('hardwareBackPress', () => true)
+    //BackHandler.addEventListener('hardwareBackPress', () => true)
   }
 
   componentWillUnmount() {
-    BackHandler.removeEventListener('hardwareBackPress', () => true)
-  }
-
-  onLoginPress = async () => {
-    //const result = await signInWithGoogleAsync()
-    // if there is no result.error or result.cancelled, the user is logged in
-    // do something with the result
+    //BackHandler.removeEventListener('hardwareBackPress', () => true)
   }
 
   showOverlay(mode, title, lastSelectedColor){
@@ -81,6 +65,11 @@ export class HomeScreenPresentation extends React.Component {
       <View style={{flex:1, flexDirection:'column', backgroundColor:'lightblue', paddingTop:Platform.OS === 'ios' ? 20 : StatusBar.currentHeight}}>
       <ScrollView contentContainerStyle={{flexGrow:1, justifyContent:'center'}} >
       <View style={styles.container}>
+        <EnterClassCodePopup
+          onClose={()=>this.setState({joinClassPopupVisible: false})}
+          visible={this.state.joinClassPopupVisible}
+        />
+
         {this.state.showOverlay &&
           <DifficultyOverlay
             navigation={this.props.navigation}
@@ -95,50 +84,58 @@ export class HomeScreenPresentation extends React.Component {
         <Text style={{fontFamily:'math-font', fontSize:80, marginTop:-40, textAlign:'center', backgroundColor:'transparent'}}>(<Text style={{color:'crimson', backgroundColor:'transparent'}}>i</Text>t<Text style={{color:'crimson', backgroundColor:'transparent'}}>!</Text>)</Text></Text>
         </View>
 
-        <View style={styles.buttonGroupContainer}>
-          <MathButton
+        <View style={styles.factorItModes}>
+          <SquareMathButton
             backgroundColor='palegreen'
             textTop='Simple'
-            textBottom='x²±c'
-            width={250}
-            flexShrink={1}
+            textMiddle='x²±c'
+            sideLength={100}
             onPress={() => this.showOverlay(MODE.DIFFERENCE_OF_SQUARES, 'Simple', 'palegreen',)}
           />
-          <SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}} onPress={()=>this.logoutOfFirebase()} />
-        </View>
-
-        <View style={styles.buttonGroupContainer}>
-          <MathButton
+          <SquareMathButton
             backgroundColor='lightsalmon'
-            textTop='Intermediate'
-            textBottom='x²±bx±c'
-            width={250}
-            flexShrink={1}
+            textTop='Moderate'
+            textMiddle='x²±bx±c'
+            sideLength={100}
             onPress={() => this.showOverlay(MODE.TRINAOMIAL_A_IS_1, 'Intermediate', 'lightsalmon',)}
           />
-          <SquareButton text={'increment cool counter'} backgroundColor='moccasin' style={{marginLeft:10}} onPress={()=>this.props.incrementUserValue('coolFactor')} />
-        </View>
-
-        <View style={styles.buttonGroupContainer}>
-          <MathButton
+          <SquareMathButton
             backgroundColor='lightcoral'
             textTop='Complex'
-            textBottom='ax²±bx±c'
-            width={250}
-            flexShrink={1}
+            textMiddle='ax²±bx±c'
+            sideLength={100}
             onPress={() => this.showOverlay(MODE.TRINAOMIAL_A_IS_NOT_1, 'Complex', 'lightcoral',)}
           />
-          {/*<SquareButton text='?' backgroundColor='moccasin' style={{marginLeft:10}} onPress={() => this.props.navigation.navigate('FactorQuizScreen')} />*/}
         </View>
 
-        <View style={styles.buttonGroupContainer}>
-          <MathButton
+        <View style={styles.classroomOptionsButtons}>
+          <RectangleMathButton
+            backgroundColor='yellow'
+            textTop={`Join Class`}
+            textBottom='For Students'
+            width={150}
+            height={70}
+            onPress={()=>this.setState({joinClassPopupVisible: true})}
+          />
+          <RectangleMathButton
             backgroundColor='white'
-            textTop='Class Codes'
-            textBottom='Information'
-            width={250}
-            flexShrink={1}
+            textTop='Manage Classes'
+            textBottom='For Teachers'
+            width={150}
+            height={70}
             onPress={() => this.props.navigation.navigate('ClassCodeScreen' )}
+          />
+        </View>
+
+        <View style={styles.logoutButton}>
+          <RectangleMathButton
+            backgroundColor='lightgrey'
+            textTop='Logout'
+            textBottom=''
+            width={300}
+            height={40}
+            flexShrink={1}
+            onPress={()=>this.logoutOfFirebase()}
           />
         </View>
 
@@ -157,12 +154,20 @@ const styles = StyleSheet.create({
     justifyContent : 'center',
     alignItems : 'center',
   },
-  buttonGroupContainer : {
+  classroomOptionsButtons : {
     flexDirection : 'row',
-    margin : 10,
+    marginTop : 20,
+    marginBottom : 5,
+    borderWidth:1,
   },
-  buttonGroupContainer2 : {
+  logoutButton : {
     flexDirection : 'row',
+    margin : 1,
+    borderWidth:1,
+  },
+  factorItModes : {
+    flexDirection : 'row',
+    alignItems:'center',
   },
   factorItText : {
     fontSize : 40,

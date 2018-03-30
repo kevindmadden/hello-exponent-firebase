@@ -80,14 +80,12 @@ const mapDispatchToProps = (dispatch, ownProps) => {
       dispatch(incrementUserStreakValues(difficultyMode))
     },
     turnOnDatabaseListeners: (factorable) => {
-      console.log('turning on listnerrs!!!!!!')
       dispatch(startUserDifficultyListener(difficultyMode))
       dispatch(generateFactorProblem(true, difficultyMode, ownProps.difficulty, ownProps.mode, factorable))
       dispatch(showLatestProblemListener(difficultyMode))
       dispatch(startFactorProblemStatisticsListener(difficultyMode))
     },
     turnOffDatabaseListeners: () => {
-      console.log('turning OFF listnerrs!!!!!!')
       dispatch(stopUserDifficultyListener(difficultyMode))
       dispatch(stopUserProblemListener(difficultyMode))
     },
@@ -270,7 +268,7 @@ class FactorDisplayPresentation extends React.Component {
               mistakesMade = {...mistakesMade, [MISTAKE.OTHER]:true}
             }
             this.props.factorProblemMistakeMade(mistakesMade)
-            this.setState({submissionFeedback: submissionFeedback})
+            this.setState({submissionFeedback: 'Try again!'})
             this.onIncorrectSubmission()
           }
 
@@ -316,7 +314,6 @@ class FactorDisplayPresentation extends React.Component {
   <Text>Trying to reconnect: {this.props.tryingToReconnect.toString()}</Text>*/
 
   render(){
-    console.log(this.state.factorProblem)
     return (
       <View style={styles.container}>
         <View style={{flexDirection:'row', alignItems:'center', justifyContent:'center'}}><View style={styles.expressionView} >

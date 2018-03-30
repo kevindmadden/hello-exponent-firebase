@@ -1,53 +1,36 @@
 import React from 'react';
 import Expo from 'expo'
 import {
-  Image,
-  Linking,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableHighlight,
-  TouchableOpacity,
   View,
-  BackHandler,
-  Webview,
-  TextInput,
-  StatusBar,
-  Modal,
   Picker,
-  Slider,
+  FlatList,
 } from 'react-native';
-
-import { BigButton, SquareButton, FlexKey, MathButton } from '../components/Button';
-import { MonoText } from '../components/StyledText';
-import { getFactoredEquation } from '../logic/differenceOfSquares';
-import DifficultyOverlay from '../screens/DifficultyOverlay'
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MathButton, RectangleSingleLineIconButton, } from '../components/Button';
 import { getModeDifficultyKey, STREAK, MODE, DIFFICULTY, MISTAKE } from '../database/userDataDefinitions'
 import { connect } from 'react-redux'
-import { generateClassCode, joinClassCodeGroup, startClassCodeGroupListener } from '../actions/mainActions'
-
-import * as firebase from 'firebase';
+import { startClassCodeGroupListener,
+  startUpdateClassIDsOwnerListener, createNewClass, } from '../actions/mainActions'
+import { CreateNewClassPopup } from '../screens/CreateNewClassPopup'
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    keyPressed: state.keyboard.keyPressed,
-    keyPressedAtTime: state.keyboard.keyPressedAtTime,
-    classStatistics: state.classStatistics, //TODO:Remove hard-coded difficulty mode
+    classStatistics: state.classStatistics,
+    classIDsOwnerList: state.classStatistics.classIDsOwnerList,
   }
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => {
   return {
-    generateClassCode: () => {
-      dispatch(generateClassCode())
-    },
-    joinClassCodeGroup: (classCode) => {
-      dispatch(joinClassCodeGroup(classCode))
-    },
-    startClassCodeGroupListener: (classCode, modeDifficultyKey) =>{
+    startClassCodeGroupListener: (classCode, modeDifficultyKey) => {
       dispatch(startClassCodeGroupListener(classCode, modeDifficultyKey))
     },
+    startMountListeners: () => {
+      dispatch(startUpdateClassIDsOwnerListener())
+    }
   }
 }
 
@@ -68,61 +51,66 @@ export class ClassCodeScreenPresentation extends React.Component {
       lastSelectedMode:'differenceOfSquares',
       lastSelectedTitle:'Simple',
       lastSelectedColor:'palegreen',
-      text: '',
+      classCode: '',
+      newClassName: '',
       difficulty: DIFFICULTY.EASY,
       mode: MODE.DIFFERENCE_OF_SQUARES,
       modeDifficultyKey: getModeDifficultyKey(MODE.DIFFERENCE_OF_SQUARES, DIFFICULTY.EASY),
+      createNewClassPopupVisible: false,
     }
 
   }
 
   componentDidMount() {
-
+    this.props.startMountListeners()
   }
 
   componentWillUnmount() {
 
   }
 
-
   render() {
     return (
 
       <View style={{flex:1, flexDirection:'column', backgroundColor:'lightblue'}}>
       <ScrollView contentContainerStyle={{flexGrow:1, justifyContent:'center'}} >
+      <View style={styles.container}>
+        <CreateNewClassPopup
+          onClose={()=>this.setState({createNewClassPopupVisible: false})}
+          visible={this.state.createNewClassPopupVisible}
+        />
 
-        <View style={styles.buttonGroupContainer}>
-          <MathButton
-            backgroundColor='palegreen'
-            textTop='Generate'
-            textBottom='Class Code'
-            width={250}
-            flexShrink={1}
-            onPress={() => this.props.generateClassCode()}
+      <View style={{flex:1,flexDirection:'row', borderBottomWidth:1, borderTopWidth:0,}}>
+        <RectangleSingleLineIconButton
+          icon={<MaterialIcons name="add-box" size={30} color="darkgreen" style={{marginRight:20, marginLeft:10}} />}
+          text={<Text style={{fontSize:18,}}>New Class</Text>}
+          backgroundColor='lightgreen'
+          height={70}
+          width={'100%'}
+          onPress={()=>this.setState({createNewClassPopupVisible: true})}
+        />
+      </View>
+
+      {/* FlatList must receive data in the form of an array (hence the need for the below gibberish) */}
+      <View style={{flex:1, flexDirection:'row', backgroundColor:'lightblue'}}>
+      <FlatList
+        data={Object.keys(this.props.classIDsOwnerList).map(objKey => {return {key: objKey, className: this.props.classIDsOwnerList[objKey]['className']}})}
+        renderItem={ ({item,index}) =>
+        <View style={{borderBottomWidth:1, borderTopWidth:0,}}>
+          <RectangleSingleLineIconButton
+            icon={<Ionicons name="ios-stats" size={30} color="darkgreen" style={{marginRight:25, marginLeft:15}} />}
+            text={<Text style={{fontSize:18,}}>{item.className}</Text>}
+            backgroundColor={index%2==0 ? 'white' : 'beige'}
+            height={70}
+            width={'100%'}
+            onPress={()=>{this.props.navigation.navigate('SingleClassMainScreen', {classID: item.key} )}}
           />
         </View>
+        }
+      />
+      </View>
 
-        <View style={styles.buttonGroupContainer}>
-          <Text>Enter Class Code:</Text>
 
-          <TextInput
-            style={{height: 40, width: 100, marginLeft: 5, borderColor: 'gray', borderWidth: 1}}
-            onChangeText={(text) => this.setState({text})}
-            value={this.state.text}
-            keyboardType='numeric'
-          />
-        </View>
-
-        <View style={styles.buttonGroupContainer}>
-          <MathButton
-            backgroundColor='lightsalmon'
-            textTop='Join Class'
-            textBottom='Enter code, then press button'
-            width={250}
-            flexShrink={1}
-            onPress={() => this.props.joinClassCodeGroup(this.state.text)}
-          />
-        </View>
 
         <Text>{this.state.modeDifficultyKey}</Text>
         <View style={{flexDirection:'row', flex:1}}>
@@ -168,8 +156,7 @@ export class ClassCodeScreenPresentation extends React.Component {
           />
         </View>
 
-        <Text>{JSON.stringify(this.props.classStatistics[this.state.modeDifficultyKey])}</Text>
-
+      </View>
       </ScrollView>
       </View>
     )
@@ -188,15 +175,6 @@ const styles = StyleSheet.create({
     flexDirection : 'row',
     margin : 10,
   },
-  buttonGroupContainer2 : {
-    flexDirection : 'row',
-  },
-  factorItText : {
-    fontSize : 40,
-    color : 'white',
-    textAlign : 'center',
-    backgroundColor : 'black',
-  }
 })
 
 export const ClassCodeScreen = connect(

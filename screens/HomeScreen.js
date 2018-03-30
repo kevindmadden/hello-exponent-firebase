@@ -23,7 +23,7 @@ import { MonoText } from '../components/StyledText';
 import { getFactoredEquation } from '../logic/differenceOfSquares';
 import DifficultyOverlay from '../screens/DifficultyOverlay'
 import { HomeScreenPresentation } from '../screens/HomeScreenPresentation'
-import { databaseConnectionDisruptionFixed } from '../actions/mainActions'
+import { databaseConnectionDisruptionFixed, joinClassCodeGroup } from '../actions/mainActions'
 
 import * as firebase from 'firebase';
 
@@ -39,9 +39,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     onIncrement: () => {
       dispatch(databaseConnectionDisruptionFixed())
     },
-    incrementUserValue: (dataPath) => {
-      dispatch(databaseConnectionDisruptionFixed())
-    }
   }
 }
 

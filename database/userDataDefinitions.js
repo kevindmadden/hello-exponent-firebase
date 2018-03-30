@@ -87,6 +87,7 @@ const getModeDifficultyObjects = (forFirebase) => {
 
 export const getDefaultClassStatisticsState = () => {
   let newObj = {}
+  newObj.classIDsOwnerList={}
   for(const mode in MODE){
     for(const difficulty in DIFFICULTY){
       let modeDifficultyKey = getModeDifficultyKey(MODE[mode],DIFFICULTY[difficulty])

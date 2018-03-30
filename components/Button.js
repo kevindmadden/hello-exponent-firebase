@@ -77,6 +77,70 @@ export class MathButton extends React.Component {
   }
 }
 
+export class SquareMathButton extends React.Component {
+  render () {
+    return (
+      <View style={{borderWidth:1, margin:2}}>
+        <TouchableOpacity ref='child'
+          activeOpacity={0.70}
+          onPress={this.props.onPress}
+          style={{width:this.props.sideLength, height:this.props.sideLength, backgroundColor:'black',}}>
+          <View style={{backgroundColor:this.props.backgroundColor, width:this.props.sideLength, height:this.props.sideLength,flex:1,justifyContent:'center',alignItems:'center',}}>
+              <Text style={[styles.bigButtonText, {fontFamily:'math-font', fontSize:14, textAlign:'center',}]}>
+                {this.props.textTop}
+              </Text>
+              <Text style={[styles.bigButtonText, {fontFamily:'math-font',fontSize:20, textAlign:'center',}]}>
+                {this.props.textMiddle}
+              </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+}
+
+export class RectangleMathButton extends React.Component {
+  render () {
+    return (
+
+        <TouchableOpacity ref='child'
+          activeOpacity={0.70}
+          onPress={this.props.onPress}
+          style={{width:this.props.width, height:this.props.height, backgroundColor:'black',margin:0, flexDirection:'row'}}>
+          <View style={{backgroundColor:this.props.backgroundColor, height:this.props.height,flex:1,justifyContent:'center',alignItems:'center',}}>
+              <Text style={[styles.bigButtonText, {fontFamily:'math-font', fontSize:16, textAlign:'center',}]}>
+                {this.props.textTop}
+              </Text>
+              <Text style={[styles.bigButtonText, {fontFamily:'math-font',fontSize:12, textAlign:'center',}]}>
+                {this.props.textBottom}
+              </Text>
+          </View>
+        </TouchableOpacity>
+
+    )
+  }
+}
+
+export class RectangleSingleLineIconButton extends React.Component {
+  render () {
+    return (
+
+        <TouchableOpacity ref='child'
+          activeOpacity={0.70}
+          onPress={this.props.onPress}
+          style={{width:this.props.width, minHeight:this.props.height, backgroundColor:'black',flexDirection:'row'}}>
+          <View style={{backgroundColor:this.props.backgroundColor, width:this.props.width, minHeight:this.props.height, flex:1, flexDirection:'row',alignItems:'center',}}>
+                {this.props.icon}
+              <Text style={{fontFamily:'math-font', textAlign:'left',flex:1,}}>
+                {this.props.text}
+              </Text>
+          </View>
+        </TouchableOpacity>
+
+    )
+  }
+}
+
 class Button extends React.Component {
 //this.props.navigation.navigate('Easy')
   render () {
@@ -101,7 +165,7 @@ class Button extends React.Component {
   }
 }
 
-export class FlexKey extends React.Component {
+export class FlexKey extends React.PureComponent {
   render () {
     return (
       <FlexButton

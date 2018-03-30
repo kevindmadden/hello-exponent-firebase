@@ -37,7 +37,7 @@ const mapDispatchToProps = dispatch => {
 }
 
 
-class NumberKeyboardPresentation extends React.Component {
+class NumberKeyboardPresentation extends React.PureComponent {
 
   returnKeyValue(keyValue){
     return ()=>this.props.keyboardKeyPressed(keyValue)
