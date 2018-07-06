@@ -38,12 +38,34 @@ export const MODE = {
   TRINAOMIAL_A_IS_NOT_1 : 'trinomialAisNot1',
 }
 
+export const MODEDISPLAY = {
+  DIFFERENCE_OF_SQUARES : {
+    description: 'Simple',
+    equation: 'x²±c',
+  },
+  TRINAOMIAL_A_IS_1 : {
+    description: 'Moderate',
+    equation: 'x²±bx±c',
+  },
+  TRINAOMIAL_A_IS_NOT_1 : {
+    description: 'Complex',
+    equation: 'ax²±bx±c',
+  },
+}
+
 //Difficulty string definitions
 export const DIFFICULTY = {
   EASY : 'easy',
   NORMAL : 'normal',
   HARD : 'hard',
   INSANE : 'insane',
+}
+
+export const DIFFICULTYDISPLAY = {
+  EASY : 'Easy',
+  NORMAL : 'Normal',
+  HARD : 'Hard',
+  INSANE : 'Insane',
 }
 
 export const getModeDifficultyKey = (mode, difficulty) =>{

@@ -121,6 +121,7 @@ export class RectangleMathButton extends React.Component {
   }
 }
 
+//Did have <Text style={{fontFamily:'math-font', textAlign:'left',flex:1,}}> surrounding {this.props.text}
 export class RectangleSingleLineIconButton extends React.Component {
   render () {
     return (
@@ -131,9 +132,9 @@ export class RectangleSingleLineIconButton extends React.Component {
           style={{width:this.props.width, minHeight:this.props.height, backgroundColor:'black',flexDirection:'row'}}>
           <View style={{backgroundColor:this.props.backgroundColor, width:this.props.width, minHeight:this.props.height, flex:1, flexDirection:'row',alignItems:'center',}}>
                 {this.props.icon}
-              <Text style={{fontFamily:'math-font', textAlign:'left',flex:1,}}>
-                {this.props.text}
-              </Text>
+                <View style={{flex:1, alignItems:'flex-start'}}>
+                  {this.props.text}
+                </View>
           </View>
         </TouchableOpacity>
 

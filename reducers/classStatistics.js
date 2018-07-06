@@ -3,13 +3,15 @@ import { getDefaultClassStatisticsState } from '../database/userDataDefinitions'
 export const classStatistics = (state = getDefaultClassStatisticsState(), action) => {
   switch (action.type) {
     case 'ADD_USER_TO_CLASS_STATISTICS':
+      let otherUsers = state[action.classID] == null ? {} : {...state[action.classID][action.difficultyMode]}
       return {
         ...state,
         [action.classID] : {
           [action.difficultyMode] : {
-            ...state[action.difficultyMode],
+            ...otherUsers,
             [action.uid] : {
-              numCorrect: action.numCorrect,
+              numEventuallyCorrect: action.numEventuallyCorrect,
+              numCorrectOnFirstTry: action.numCorrectOnFirstTry,
               numSkipped: action.numSkipped,
               numMistakes: action.numMistakes,
               numOfMistakeTypes: action.numOfMistakeTypes,

@@ -161,13 +161,14 @@ export function showLatestProblemListener(difficultyMode){
   }
 }
 
-export const updateFactorProblemStatistics = (classID, difficultyMode, uid, numCorrect, numSkipped, numMistakes, numOfMistakeTypes, problemsCounter, identity='me') => {
+export const updateFactorProblemStatistics = (classID, difficultyMode, uid, numEventuallyCorrect, numCorrectOnFirstTry, numSkipped, numMistakes, numOfMistakeTypes, problemsCounter, identity='me') => {
   return {
     type: 'ADD_USER_TO_CLASS_STATISTICS',
     classID,
     difficultyMode,
     uid,
-    numCorrect,
+    numEventuallyCorrect,
+    numCorrectOnFirstTry,
     numSkipped,
     numMistakes,
     numOfMistakeTypes,
@@ -213,7 +214,8 @@ export function startFactorProblemStatisticsListener(classID, difficultyMode, fi
       'value',
       snapshot => {
         if(snapshot.val()!=null){
-          let numCorrect = 0
+          let numEventuallyCorrect = 0
+          let numCorrectOnFirstTry = 0
           let numSkipped = 0
           let numMistakes = 0
           let numOfMistakeTypes = {}
@@ -234,8 +236,11 @@ export function startFactorProblemStatisticsListener(classID, difficultyMode, fi
               // final problem in the snapshot into account in order to have accurate stats for the pastXNumOfProblems
             }else{
               if(childSnap.child('skipped').exists()) numSkipped++
-              if(childSnap.child('correct').exists()) numCorrect++
-              if(childSnap.child('mistake').exists() || childSnap.child('skipped').exists()) numMistakes++
+              if(childSnap.child('correct').exists()){
+                numEventuallyCorrect++
+                if(!childSnap.child('mistake').exists()) numCorrectOnFirstTry++
+              }
+              if(childSnap.child('mistake').exists()) numMistakes++
               if(childSnap.child('correct').exists() || childSnap.child('mistake').exists() || childSnap.child('skipped').exists()) problemsCounter++
               for(let mistakeType in MISTAKE){
                 if(childSnap.child(MISTAKE[mistakeType]).exists()) numOfMistakeTypes[MISTAKE[mistakeType]]++
@@ -246,7 +251,7 @@ export function startFactorProblemStatisticsListener(classID, difficultyMode, fi
           //TODO: Add identity feature back in
           //let identity = firebaseUID.displayName
           //TODO: update dispatch call so it has the variable for identity
-          dispatch(updateFactorProblemStatistics(classID, difficultyMode, uid, numCorrect, numSkipped, numMistakes, numOfMistakeTypes, problemsCounter, displayName))
+          dispatch(updateFactorProblemStatistics(classID, difficultyMode, uid, numEventuallyCorrect, numCorrectOnFirstTry, numSkipped, numMistakes, numOfMistakeTypes, problemsCounter, displayName))
         }
       },
       error => {
