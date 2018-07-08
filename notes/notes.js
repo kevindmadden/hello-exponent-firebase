@@ -31,51 +31,61 @@ Turf War Game:
 			r
 			*/
 			grid = {
-				square_r0_c0 : { owner : 'blue', r:0,c:0 },
-				square_r0_c1 : { owner : 'none', r:0,c:1 },
-				square_r1_c0 : { owner : 'green', r:1,c:0 },
+				square_r0_c0 : { owner : 'blue', r:0, c:0, attackers:{'longrandomkeyid':'green'} },
+				square_r0_c1 : { owner : 'none', r:0, c:1 },
+				square_r1_c0 : { owner : 'green', r:1, c:0 },
+				square_r2_c0 : { owner : 'green', home:{relLoc:{r:0,c:0},size:{r:2,c:2}}, r:2, c:0 }
+				square_r2_c1 : { owner : 'green', home:{relLoc:{r:0,c:1},size:{r:2,c:2}}, r:2, c:1 }
 			}
 			function updateSquare(squareName){
-				IS_TEAM_OWNED_SQUARE = squareName.owner == user.team ? true : false //a square that is owned by the user’s team
-				IS_OWNED_SQUARE = squareName.owner != 'none' ? true : false //a square that is owned by either the user's team or another team
-				IS_ADJACENT_TO_TEAM_OWNED_SQUARE = (() => { //a square that is adjacent to a square that is owned by the uder's team
-					let adjacentSquares = {
-						above_square : grid['square_r'+(squareName.r)+'_c'+(squareName.c-1)],
-						below_square : grid['square_r'+(squareName.r)+'_c'+(squareName.c+1)],
-						left_square : grid['square_r'+(squareName.r-1)'_c'+(squareName.c)],
-						right_square : grid['square_r'+(squareName.r+1)'_c'+(squareName.c)]
-					}
-					for(adjacentSquare in adjacentSquares){
+				const ADJACENT_SQUARES = 	{ above_square : grid['square_r'+(squareName.r)+'_c'+(squareName.c-1)],
+																		below_square : grid['square_r'+(squareName.r)+'_c'+(squareName.c+1)],
+																		left_square : grid['square_r'+(squareName.r-1)'_c'+(squareName.c)],
+																		right_square : grid['square_r'+(squareName.r+1)'_c'+(squareName.c)] }
+				const IS_TEAM_OWNED_SQUARE = squareName.owner == user.team ? true : false //a square that is owned by the user’s team
+				const IS_HOME_SQUARE = squareName.home != undefined ? true : false
+				const IS_SQUARE_UNDER_ATTACK = (squareName.attakers !== undefined) ? true : false //a square that is owned by the user’s team
+				const IS_OWNED_SQUARE = squareName.owner != 'none' ? true : false //a square that is owned by either the user's team or another team
+				const IS_ADJACENT_TO_TEAM_OWNED_SQUARE = Object.values(ADJACENT_SQUARES).some(sq => sq!=undefined && sq.owner==user.team)  //a square that is adjacent to a square that is owned by the user's team
+				/*const IS_ADJACENT_TO_TEAM_OWNED_SQUARE = (() => { //a square that is adjacent to a square that is owned by the user's team
+					for(adjacentSquareKey in ADJACENT_SQUARES){
+						let adjacentSquare = ADJACENT_SQUARES[adjacentSquareKey]
 						if(adjacentSquare != undefined && adjacentSquare.owner==user.team) return true
 					}
 					return false
-				})();
+				})();*/
 
-				if(IS_TEAM_OWNED_SQUARE){
-
-				}else{ //!IS_TEAM_OWNED_SQUARE
-					if(IS_ADJACENT_TO_TEAM_OWNED_SQUARE){
-						if(squareName.owner=='none'){
-
-						}else{//squareName.owner!='none'
-
-						}
-					}else{
-
-					}
+				if( IS_TEAM_OWNED_SQUARE &&  IS_SQUARE_UNDER_ATTACK){
+					squareName.icon = 'icon that corresponds to squareName.owner'
+					squareName.secondaryIcon = "some sort of icon with a shield indicating possibility to defend"
 				}
-				if(!IS_OWNED_SQUARE)
+				if( IS_TEAM_OWNED_SQUARE && !IS_SQUARE_UNDER_ATTACK){
+					squareName.icon = 'icon that corresponds to squareName.owner'
+					squareName.secondaryIcon = null
+				}
 
-				if(isAdjacentToTeamSquare(square))
+				//need logic to handle larger home base square(s)
+
+				if(!IS_TEAM_OWNED_SQUARE &&  IS_ADJACENT_TO_TEAM_OWNED_SQUARE &&  IS_OWNED_SQUARE){
+					squareName.icon = 'icon that corresponds to squareName.owner'
+					squareName.secondaryIcon = "attack icon of some sort (indicating that the square can be taken over by the user's team)"
+				}
+				if(!IS_TEAM_OWNED_SQUARE &&  IS_ADJACENT_TO_TEAM_OWNED_SQUARE && !IS_OWNED_SQUARE){
+					squareName.icon = 'square outline with + in the corner (https://thenounproject.com/search/?q=add&i=1821803)'
+					squareName.secondaryIcon = null
+				}
+				if(!IS_TEAM_OWNED_SQUARE && !IS_ADJACENT_TO_TEAM_OWNED_SQUARE &&  IS_OWNED_SQUARE){
+					squareName.icon = 'icon that corresponds to squareName.owner'
+					squareName.secondaryIcon = null
+				}
+				if(!IS_TEAM_OWNED_SQUARE && !IS_ADJACENT_TO_TEAM_OWNED_SQUARE && !IS_OWNED_SQUARE){
+					squareName.icon = 'square outline without + in the corner (https://thenounproject.com/search/?q=add&i=1821803)'
+					squareName.secondaryIcon = null
+				}
+
 
 			}
 
-			!(TEAM_OWNED_SQUARE) is Adjacent to TEAM_OWNED_SQUARE
-				If NOT_OWNED_SQUARE: White / square outline with ‘+’ in corner (https://thenounproject.com/search/?q=add&i=1821803)
-				If OWNED_SQUARE: Other team’s color / other team’s icon / attack icon of some sort (indicating that the square can be taken over)
-			!(TEAM_OWNED_SQUARE) is NOT Adjacent to TEAM_OWNED_SQUARE
-				No Team Owns: White / square outline
-				Other Team Owns: Other team’s color / other team’s icon
 			Grid Square Not Adjacent
 			No team owns grid square yet
 				Other team(s) attempting to own
