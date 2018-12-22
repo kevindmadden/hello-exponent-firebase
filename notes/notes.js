@@ -33,57 +33,67 @@ Turf War Game:
 			/*
 			Teacher creates Game
 				Select Class
-				Pick number of teams (4-8 players per team is recommended)
-				Select grid size (there will be a recommended size)
-				Pick Teams
+					Pick number of teams (4-8 players per team is recommended)
+					Select grid size (there will be a recommended size): Small Medium Large
+					Pick Teams
+						Pull list of players in class
+							Attach listener for new players that join class so that they automatically appear as they join
+						List player names, one per row:
+							# PlayerName o * # $
+							* PlayerName o * # $
+						Put button on right side; when a button is pressed, icon gets copied over to left side (see example above)
+						When an icon is assigned to a player, update players.playerid with the team that corresponds to the icon
+					Start Game
+						Allow players to start playing
+						Alert players with the app open that the game is starting
 			*/
 
 			//Firebase data format
 			//when user answers problem correctly, check in a transaction that the problem answered has the problemId
-			//   if it does, then update the owner in publicData and clear the current problemId
+			//   if it does, then...
+			//									update the owner in publicData and clear the current problemId
+			//									clear all the solvers from the grid square (i.e. delete the node for the grid square in solvers)
 			//if there is not problemId and a user clicks on square, update in a transaction the problemId
 			gameId : {
 				gameInformation : {
 					gameType : 'turf war',
 					gridSize : {r:10,c:10},
+					teams : {'blue','green','red'},
 				},
 				players : {
 					playerid1 : 'green',
 					playerid2 : 'blue',
 					playerid3 : 'blue',
+					playerid4 : 'green',
+					playerid5 : 'red',
 				},
-				publicData : {
+				owners : {
 					'0_0' : {owner:'green', problemId:'currentIdThatNoOneHasYetSolved or empty_string' },
 					'0_1' : {owner : 'green', home:{relLoc:{r:0,c:0},size:{r:2,c:2}}},
 					'0_2' : {owner : 'green', home:{relLoc:{r:0,c:1},size:{r:2,c:2}}},
 					'0_3' : {owner: 'green', problemId:''},
-					'0_4' : {owner: '', problemId:''},
+					'0_4' : {owner: '', problemId:'currentIdThatNoOneHasYetSolved2'},
 					'0_5' : {owner: '', problemId:''},
 					'0_6' : {owner: '', problemId:''},
 					'1_0' : {owner: '', problemId:''},
 					'1_1' : {owner : 'green', home:{relLoc:{r:1,c:0},size:{r:2,c:2}}},
 					'1_2' : {owner : 'green', home:{relLoc:{r:1,c:1},size:{r:2,c:2}}},
 				},
-				adjacentData : {
-					'0_0' : {solvers: {'green':true,'blue':true}}
+				solvers : {
+					'0_0' : {'green':true,'blue':true},
+					'0_4' : {'green':true},
 				},
 				problems : {
 					'currentIdThatNoOneHasYetSolved' : {'problem stuff here'},
+					'currentIdThatNoOneHasYetSolved2' : {'problem stuff here'},
 				},
 			}
 
-			grid = {
-				square_r0_c0 : { owner : 'blue', r:0, c:0, attackers:{'longrandomkeyid':'green'} },
-				square_r0_c1 : { owner : 'none', r:0, c:1 },
-				square_r1_c0 : { owner : 'green', r:1, c:0 },
-				square_r2_c0 : { owner : 'green', home:{relLoc:{r:0,c:0},size:{r:2,c:2}}, r:2, c:0 }
-				square_r2_c1 : { owner : 'green', home:{relLoc:{r:0,c:1},size:{r:2,c:2}}, r:2, c:1 }
-			}
 			function updateSquare(squareName){
-				const ADJACENT_SQUARES = 	{ above_square : grid['square_r'+(squareName.r)+'_c'+(squareName.c-1)],
-																		below_square : grid['square_r'+(squareName.r)+'_c'+(squareName.c+1)],
-																		left_square : grid['square_r'+(squareName.r-1)'_c'+(squareName.c)],
-																		right_square : grid['square_r'+(squareName.r+1)'_c'+(squareName.c)] }
+				const ADJACENT_SQUARES = 	{ above_square : grid['r'+(squareName.r)+'_c'+(squareName.c-1)],
+																		below_square : grid['r'+(squareName.r)+'_c'+(squareName.c+1)],
+																		left_square : grid['r'+(squareName.r-1)'_c'+(squareName.c)],
+																		right_square : grid['r'+(squareName.r+1)'_c'+(squareName.c)] }
 				const IS_TEAM_OWNED_SQUARE = squareName.owner == user.team ? true : false //a square that is owned by the user’s team
 				const IS_HOME_SQUARE = squareName.home != undefined ? true : false
 				const IS_TOP_LEFT_HOME_SQUARE = (squareName.home != undefined && squareName.home.relLoc != undefined && squareName.home.relLoc.r==0 && squareName.home.relLoc.c==0) ? true : false

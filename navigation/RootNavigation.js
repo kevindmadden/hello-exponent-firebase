@@ -10,6 +10,8 @@ import { FactorQuizScreen } from '../screens/FactorQuizScreen'
 import { ClassCodeScreen } from '../screens/ClassCodeScreen'
 import { SingleClassMainScreen } from '../screens/SingleClassMainScreen'
 import { StatisticsScreen } from '../screens/StatisticsScreen'
+import { LoadTeamScreen } from '../screens/LoadTeamScreen'
+import { ChooseLoadOrNewTeamScreen } from '../screens/ChooseLoadOrNewTeamScreen'
 //height: Platform.OS === "ios" ? 64 : (56 + StatusBar.currentHeight),
 const RootStackNavigator = StackNavigator(
   {
@@ -27,6 +29,12 @@ const RootStackNavigator = StackNavigator(
     },
     StatisticsScreen: {
       screen: StatisticsScreen,
+    },
+    LoadTeamScreen: {
+      screen: LoadTeamScreen,
+    },
+    ChooseLoadOrNewTeamScreen: {
+      screen: ChooseLoadOrNewTeamScreen,
     }
   },
   {

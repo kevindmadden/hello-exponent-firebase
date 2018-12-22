@@ -34,12 +34,12 @@ const mapDispatchToProps = (dispatch, ownProps) => {
   }
 }
 
-export class ClassCodeScreenPresentation extends React.Component {
+export class LoadTeamScreenPresentation extends React.Component {
 
   //TODO: Cannot see header on this page
   static navigationOptions = {
     //header:null, //remove this line to display header
-    headerTitle: 'Class Code Information',
+    headerTitle: 'Start Game: Choose Class',
   }
 
   constructor(props) {
@@ -62,7 +62,7 @@ export class ClassCodeScreenPresentation extends React.Component {
   }
 
   componentDidMount() {
-    this.props.startMountListeners()
+    //this.props.startMountListeners()
   }
 
   componentWillUnmount() {
@@ -79,17 +79,6 @@ export class ClassCodeScreenPresentation extends React.Component {
           onClose={()=>this.setState({createNewClassPopupVisible: false})}
           visible={this.state.createNewClassPopupVisible}
         />
-
-      <View style={{flex:1,flexDirection:'row', borderBottomWidth:1, borderTopWidth:0,}}>
-        <RectangleSingleLineIconButton
-          icon={<MaterialIcons name="add-box" size={30} color="darkgreen" style={{marginRight:20, marginLeft:10}} />}
-          text={<Text style={{fontSize:18,}}>Start Game</Text>}
-          backgroundColor='red'
-          height={70}
-          width={'100%'}
-          onPress={()=>{this.props.navigation.navigate('LoadTeamScreen')}}
-        />
-      </View>
 
       <View style={{flex:1,flexDirection:'row', borderBottomWidth:1, borderTopWidth:0,}}>
         <RectangleSingleLineIconButton
@@ -114,7 +103,7 @@ export class ClassCodeScreenPresentation extends React.Component {
             backgroundColor={index%2==0 ? 'white' : 'beige'}
             height={70}
             width={'100%'}
-            onPress={()=>{this.props.navigation.navigate('SingleClassMainScreen', {classID: item.key} )}}
+            onPress={()=>{this.props.navigation.navigate('ChooseLoadOrNewTeamScreen', {classID: item.key} )}}
           />
         </View>
         }
@@ -188,7 +177,7 @@ const styles = StyleSheet.create({
   },
 })
 
-export const ClassCodeScreen = connect(
+export const LoadTeamScreen = connect(
   mapStateToProps,
   mapDispatchToProps
-)(ClassCodeScreenPresentation)
+)(LoadTeamScreenPresentation)
